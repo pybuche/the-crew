@@ -1,37 +1,5 @@
 import random
 
-def draw_cards(card_deck, players):
-    random.shuffle(card_deck)
-    while len(card_deck) > 0:
-        for (index,player) in enumerate(players):
-            card = card_deck.pop()
-            print('giving {} to {}'.format(card, player))
-            if card.color == 'black' and card.number == 4:
-                captain_name = player.name
-                captain_index = index
-            player.add_card(card)
-    print('{} is the captain!'.format(captain_name))
-    return captain_index
-
-def draw_mission(mission_deck, players, mission_number):
-    mission = MISSION_DATABASE[mission_number]
-    if mission[0] == 0:
-        # special mission
-        modifiers = mission[1]
-        if modifier[0] == -1: # first special mission
-            pass
-        elif modifier[0] == -2: # second special mission
-            pass
-    else:
-        # regular mission
-        number_of_cards = mission[0]
-        modifiers = mission[1]
-        mission_list = mission_deck[0:number_of_cards]
-        # put the mission back at the end of the deck 
-        mission_deck = [mission_deck[(idx + number_of_cards) % len(mission_deck)] for idx in range(len(mission_deck))]
-        # deal missions to players starting with captain
-        
-
 class Card:
     def __init__(self, color, number):
         self.color = color
@@ -52,11 +20,11 @@ class Card:
             return False
 
 class Mission:
-    def __init__(self,color,number):
+    def __init__(self, color, number):
         self.color = color
         self.number = number
         self.modifier = []
-    
+
     def __repr__(self):
         return 'Mission {} {} mod {}'.format(self.number, self.color, self.modifier)
 
@@ -129,21 +97,21 @@ class Player:
 
 
 class Turn:
-    def __init__(self, players):
+    def __init__(self, players, index, mission):
         self.fold = Fold()
         self.players = players
+        self.index = index
+        self.mission = mission
 
+    # Return winner_index, mission_completed
     def play(self):
-        if len(self.players[0].cards) == 0:
-            print('Game is finished!!!')
-            return
-
+        print('##########################')
+        print('Turn n°{}'.format(self.index))
+        print('--------------------------')
         for player in self.players:
             player.play(self.fold)
 
         winner_index = self.fold.get_winner_index()
-        print('Winner is {}'.format(self.players[winner_index].name))
+        mission_completed = self.mission in self.fold.cards
+        return winner_index, mission_completed
 
-        new_players_order = [self.players[(idx + winner_index) % len(self.players)] for idx in range(len(self.players))]
-        new_turn = Turn(new_players_order)
-        return new_turn.play()
