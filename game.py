@@ -93,9 +93,17 @@ class Game:
 
         print('YOU WON MISSION {} AFTER {} tries'.format(mission, counter))
         print('##########################')
+        return counter
 
 
-game = Game()
-game.play()
+tries = 0
+min = 0
+max = 0
+for i in range(0, 1000):
+    game = Game()
+    counter = game.play()
+    tries += counter
+    min = counter if counter < min or i == 0 else min
+    max = counter if counter > max else max
 
-
+print(tries / 1000, min, max)
