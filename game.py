@@ -99,11 +99,14 @@ class Game:
 tries = 0
 min = 0
 max = 0
-for i in range(0, 1000):
+values = []
+for i in range(0, 10000):
     game = Game()
     counter = game.play()
+    values.append(counter)
     tries += counter
     min = counter if counter < min or i == 0 else min
     max = counter if counter > max else max
 
-print(tries / 1000, min, max)
+print(tries / 10000, min, max)
+print(values)
