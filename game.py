@@ -42,7 +42,7 @@ class Game:
         while not mission_completed:
             turn_index += 1
             turn = Turn(self.players, turn_index, mission)
-            winner_index, mission_completed = turn.play()
+            winner_index, mission_completed = turn.play(captain_index)
 
             print('-----------------------')
             print('Winner is {}'.format(self.players[winner_index].name))

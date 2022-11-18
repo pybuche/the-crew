@@ -59,14 +59,41 @@ class Player:
     def __init__(self, name):
         self.name = name
         self.cards = []
-
     def __repr__(self):
         return '{} ({})'.format(self.name, ','.join([str(card) for card in self.cards]))
+
+    @property
+    def colors(self):
+        return {
+            "green": list(filter(lambda card: card.color == "green", self.cards)),
+            "yellow": list(filter(lambda card: card.color == "yellow", self.cards)),
+            "blue": list(filter(lambda card: card.color == "blue", self.cards)),
+            "pink": list(filter(lambda card: card.color == "pink", self.cards)),
+            "black": list(filter(lambda card: card.color == "black", self.cards)),
+        }
 
     def add_card(self, card):
         self.cards.append(card)
 
-    def play(self, fold):
+    def find_card_to_play(self, playable_cards, fold, mission, player_index, captain_index):
+        winner_index = fold.get_winner_index()
+
+        if len(playable_cards) == 1:
+            return playable_cards[0]
+
+        if mission in playable_cards:
+            # If the captain is winning the fold and you have the card, you play it!
+            if winner_index == captain_index:
+                return mission
+            # Or if the captain plays after you and the fold is weak, you play it as well (betting)
+            if (captain_index > player_index and max(card.number for card in fold.cards) < 5):
+                return mission
+
+        min_or_max = max if player_index == captain_index else min
+        everything_but_mission = list(filter(lambda card: card != mission, playable_cards))
+        return min_or_max(everything_but_mission)
+
+    def play(self, fold, mission, player_index, captain_index):
         card = None
 
         if len(fold.cards) == 0:
@@ -80,17 +107,15 @@ class Player:
             if len(cards_with_same_color) == 0:
                 black_cards = list(filter(lambda card: card.color == 'black', self.cards))
                 if len(black_cards) == 0:
-                    random.shuffle(self.cards)
-                    card = self.cards.pop()
+                    card = self.find_card_to_play(self.cards, fold, mission, player_index, captain_index)
+                    self.cards.remove(card)
                 else:
                     max_black_card = max(black_cards, key=lambda card: card.number)
                     self.cards.remove(max_black_card)
                     card = max_black_card
             else:
-                max_card_from_color = max(cards_with_same_color, key=lambda card: card.number)
-                self.cards.remove(max_card_from_color)
-                card = max_card_from_color
-
+                card = self.find_card_to_play(cards_with_same_color, fold, mission, player_index, captain_index)
+                self.cards.remove(card)
 
         fold.add_card(card)
         print('{} plays {} on fold {}'.format(self.name, card, fold))
@@ -104,14 +129,13 @@ class Turn:
         self.mission = mission
 
     # Return winner_index, mission_completed
-    def play(self):
+    def play(self, captain_index):
         print('##########################')
-        print('Turn n°{}'.format(self.index))
+        print('Turn n°{} | Mission {}'.format(self.index, self.mission))
         print('--------------------------')
-        for player in self.players:
-            player.play(self.fold)
+        for index, player in enumerate(self.players):
+            player.play(self.fold, self.mission, index, captain_index)
 
         winner_index = self.fold.get_winner_index()
         mission_completed = self.mission in self.fold.cards
         return winner_index, mission_completed
-
