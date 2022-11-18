@@ -1,12 +1,8 @@
 from models import *
-from utils import draw_cards
 
 
 CARD_COLORS = ['green', 'yellow', 'blue', 'pink']
-
 MISSION_DECK = [Card(color, number) for color in CARD_COLORS for number in range(1, 10)]
-CARD_DECK = MISSION_DECK + [Card('black', number) for number in range(1, 5)]
-
 
 PLAYERS = [
     Player('Marie'),
@@ -16,11 +12,23 @@ PLAYERS = [
     Player('Pierrick')
 ]
 
+def draw_cards(players):
+    card_deck = [Card(color, number) for color in CARD_COLORS for number in range(1, 10)] + [Card('black', number) for number in range(1, 5)]
+    captain_index = 0
+    random.shuffle(card_deck)
+    while len(card_deck) > 0:
+        for (index, player) in enumerate(players):
+            card = card_deck.pop()
+            # print('giving {} to {}'.format(card, player))
+            if card.color == 'black' and card.number == 4:
+                captain_index = index
+            player.add_card(card)
+    return captain_index
+
 class Game:
     def __init__(self):
         self.players = PLAYERS
-        self.card_deck = CARD_DECK
-        self.mission_deck = MISSION_DECK
+        self.mission_deck = [Card(color, number) for color in CARD_COLORS for number in range(1, 10)]
 
     def reorder_players(self, captain_index):
         self.players = [self.players[(idx + captain_index) % len(self.players)] for idx in range(len(self.players))]
@@ -30,6 +38,7 @@ class Game:
         winner_index = None
         captain_index = 0
         mission_completed = False
+        has_won_mission = False
         while not mission_completed:
             turn_index += 1
             turn = Turn(self.players, turn_index, mission)
@@ -39,24 +48,23 @@ class Game:
             print('Winner is {}'.format(self.players[winner_index].name))
             self.reorder_players(winner_index)
 
-            print('Mission {} completed: {}'.format(mission, mission_completed))
-
             if mission_completed:
-                print('##########################')
-                if captain_index == winner_index:
-                    print('YOU WON')
-                else:
-                    print('GAME OVER')
-                print('##########################')
-                return
+                has_won_mission = (captain_index == winner_index)
+                break
 
             captain_index = (captain_index - winner_index) % 5
             print('Captain is still {}'.format(self.players[captain_index].name))
 
+        return has_won_mission
 
-    def play(self):
+
+    def play(self, counter = 1):
+        # Players have no cards in hand
+        for player in self.players:
+            player.cards = []
+
         # Draw cards
-        captain_index = draw_cards(self.card_deck, self.players)
+        captain_index = draw_cards(self.players)
         self.reorder_players(captain_index)
         print('##########################')
         print('Starting game with')
@@ -72,10 +80,18 @@ class Game:
         print('Selecting mission')
         random.shuffle(self.mission_deck)
         mission = self.mission_deck.pop(0)
-        self.mission_deck = self.mission_deck.append(mission)
+        self.mission_deck.append(mission)
 
         print('Playing mission {}'.format(mission))
-        self.play_mission(mission)
+        has_won_mission = self.play_mission(mission)
+
+        print('##########################')
+        if not has_won_mission:
+            print('GAME OVER')
+            print('##########################')
+            return self.play(counter + 1)
+
+        print('YOU WON MISSION {} AFTER {} tries'.format(mission, counter))
         print('##########################')
 
 

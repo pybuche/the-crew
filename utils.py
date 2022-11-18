@@ -8,20 +8,6 @@ MISSION_DATABASE = [
     [0,[-1]]
 ]
 
-
-def draw_cards(card_deck, players):
-    captain_index = 0
-    random.shuffle(card_deck)
-    while len(card_deck) > 0:
-        for (index, player) in enumerate(players):
-            card = card_deck.pop()
-            # print('giving {} to {}'.format(card, player))
-            if card.color == 'black' and card.number == 4:
-                captain_index = index
-            player.add_card(card)
-    return captain_index
-
-
 def draw_mission(mission_deck, players, mission_number):
     mission = MISSION_DATABASE[mission_number]
     if mission[0] == 0:
