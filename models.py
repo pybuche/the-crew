@@ -1,26 +1,22 @@
 import random
 
-# Tentative definition of general game components 
-
-# A Session can have several Game (the crew, coinche)
-# A Game has several Rounds
-# A Round as several Turns (usually = #players)
-# A Turn can feature several actions
-
 class Game:
-    def __init__(self,state = None):
-        self.players = [] # list of players in the game
+    def __init__(self,players,state = None):
+        self.players = players # list of players in the game
         self.rounds = [] # list of played rounds
         self.state = state # determines the game state (map, tokens, deck, discard pile...)
+        self.history = []
         self.winner = []
 
     def setup_game(self):
         # initialize the game state (shuffle and deal cards, distribute tokens,...)
         # determine which player starts the first round 
+
         # This stage may or may not require actions from the players
         # the crew: determine which mission to play
         # tarot or coinche : annonces
-        pass
+        for p in self.players:
+            p.play_setup_action(self.state)
 
     def game_over(self): 
         # use the game state to determine if the game is over
@@ -38,36 +34,38 @@ class Game:
 class Round:
     def __init__(self,game):
         self.game = game # access game state and players
-        self.turns = [] # list of turns played 
-        self.events = [] # events that may occur besides players playing their turns
 
     def start_round(self):
         # process any events that may occur before player start to play
         # (i.e. Galerapagos weather card, food and water supply)
-        pass
+
+        # allow players to play beginning of turn actions
+        for p in self.game.players:
+            p.play_start_actions(self.game.state)
     
     def end_round(self):
         # process any events that may occur after players have played
         # (i.e. determine who is the next first player for the next round)
-        pass
 
+        # allow players to do end of turn actions
+        for p in self.game.players:
+            p.play_end_actions(self.game.state)
+            
     def play(self):
         self.start_round()
+
         # each player plays
-        
+        for p in self.game.players:
+            p.play_regular_actions(self.game.state)
+            for p in self.game.players:
+                p.play_interrupt_actions(self.game.state)
+                
         self.end_round()
-
-class Turn:
-    def __init__(self):
-        self.player = None # the player of the turn
-        self.actions = [] # list of actions performed during the turn
-
-
-    
+ 
 class Player: # Players have a name, a score 
-    def __init__(self):
-        self.name = None
-        self.score = None
+    def __init__(self,name):
+        self.name = name
+        self.score = 0
         self.setup_actions = [] # during setup of the game
         self.start_actions = [] # at the beginning of each round
         self.regular_actions = [] # actions during the turn
@@ -75,6 +73,7 @@ class Player: # Players have a name, a score
         self.end_actions = [] # actions at the end of the round
 
     def register_setup_action(self):
+        # define a list of functions that take the game as input
         self.setup_actions = []
 
     def register_start_actions(self):
@@ -84,10 +83,77 @@ class Player: # Players have a name, a score
         self.regular_actions = []
 
     def register_interrupt_actions(self):
-        
+        self.interrupt_actions = []
+
+    def register_end_actions(self):
+        self.end_actions = []
+
 
 class Bot(Player): # Bots are players that can implement automatic strategies
-    pass
+    def play_setup_action(self,game_state):
+        if self.setup_actions:
+            action = random.choice(self.setup_actions)
+            action(game_state)
+
+    def play_start_actions(self,game_state):
+        if self.start_actions:
+            action = random.choice(self.start_actions)
+            action(game_state)
+
+    def play_regular_actions(self,game_state):
+        if self.regular_actions:
+            action = random.choice(self.regular_actions)
+            action(game_state)
+
+    def play_interrupt_actions(self,game_state):
+        if self.interrupt_actions:
+            action = random.choice(self.interrupt_actions)
+            action(game_state)
+
+    def play_end_actions(self,game_state):
+        if self.end_actions:
+            action = random.choice(self.end_actions)
+            action(game_state)
+
+    def __repr__(self):
+        return "Bot: {}".format(self.name)
 
 class Human(Player): # Humans are asked what to play
-    pass
+    def menu_select(self,options):
+        print(options)
+        choice = input(">> ")
+        choice = int(choice)
+        try:
+            selection = options[choice]
+        except IndexError:
+            print("Invalid selection, please try again.\n")
+            self.menu_select(options)
+        return selection
+
+    def play_setup_action(self,game_state):
+        if self.setup_actions:
+            action = self.menu_select(self.setup_actions)
+            action(game_state)
+
+    def play_start_actions(self,game_state):
+        if self.start_actions:
+            action = self.menu_select(self.start_actions)
+            action(game_state)
+
+    def play_regular_actions(self,game_state):
+        if self.regular_actions:
+            action = self.menu_select(self.regular_actions)
+            action(game_state)
+
+    def play_interrupt_actions(self,game_state):
+        if self.interrupt_actions:
+            action = self.menu_select(self.interrupt_actions)
+            action(game_state)
+
+    def play_end_actions(self,game_state):
+        if self.end_actions:
+            action = self.menu_select(self.end_actions)
+            action(game_state)
+
+    def __repr__(self):
+        return "Human: {}".format(self.name)

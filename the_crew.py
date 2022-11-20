@@ -3,6 +3,27 @@ from models import *
 class TheCrew(Game):
     pass
 
+class RandomBot(Bot): # Bots are players that can implement automatic strategies
+    def select_setup_action(self):
+        action = random.choice(self.setup_actions)
+        action()
+
+    def select_start_actions(self):
+        action = random.choice(self.setup_actions)
+        action()
+
+    def select_regular_actions(self):
+        action = random.choice(self.regular_actions)
+        action()
+
+    def select_interrupt_actions(self):
+        action = random.choice(self.interrupt_actions)
+        action()
+
+    def select_end_actions(self):
+        action = random.choice(self.end_actions)
+        action()
+
 class Card:
     def __init__(self, color, number):
         self.color = color
