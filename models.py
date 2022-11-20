@@ -1,141 +1,93 @@
 import random
 
-class Card:
-    def __init__(self, color, number):
-        self.color = color
-        self.number = number
+# Tentative definition of general game components 
 
-    def __repr__(self):
-        return '{} {}'.format(self.color, self.number)
+# A Session can have several Game (the crew, coinche)
+# A Game has several Rounds
+# A Round as several Turns (usually = #players)
+# A Turn can feature several actions
 
-    def __eq__(self, other):
-        return self.color == other.color and self.number == other.number
+class Game:
+    def __init__(self,state = None):
+        self.players = [] # list of players in the game
+        self.rounds = [] # list of played rounds
+        self.state = state # determines the game state (map, tokens, deck, discard pile...)
+        self.winner = []
 
-    def __gt__(self, other):
-        if self.color == other.color:
-            return self.number > other.number
-        if self.color == 'black' and other.color != 'black':
-            return True
-        if self.color != 'black' and other.color == 'black':
-            return False
+    def setup_game(self):
+        # initialize the game state (shuffle and deal cards, distribute tokens,...)
+        # determine which player starts the first round 
+        # This stage may or may not require actions from the players
+        # the crew: determine which mission to play
+        # tarot or coinche : annonces
+        pass
 
-class Mission:
-    def __init__(self, color, number):
-        self.color = color
-        self.number = number
-        self.modifier = []
+    def game_over(self): 
+        # use the game state to determine if the game is over
+        # determine the winner if any
+        # return true or false
+        return False
 
-    def __repr__(self):
-        return 'Mission {} {} mod {}'.format(self.number, self.color, self.modifier)
+    def play(self):
+        # play the game
+        self.setup_game()
+        while ~self.game_over:
+            round = Round(self)
+            round.play()
 
-class Fold:
-    def __init__(self):
-        self.cards = []
+class Round:
+    def __init__(self,game):
+        self.game = game # access game state and players
+        self.turns = [] # list of turns played 
+        self.events = [] # events that may occur besides players playing their turns
 
-    def __repr__(self):
-        return '({})'.format(','.join([str(c) for c in self.cards]))
+    def start_round(self):
+        # process any events that may occur before player start to play
+        # (i.e. Galerapagos weather card, food and water supply)
+        pass
+    
+    def end_round(self):
+        # process any events that may occur after players have played
+        # (i.e. determine who is the next first player for the next round)
+        pass
 
-    def add_card(self, card):
-        self.cards.append(card)
-
-    def get_winner_index(self):
-        fold_color = self.cards[0].color
-
-        best_index = 0
-        best_card = self.cards[0]
-
-        for card_index in range(1, len(self.cards)):
-            current_card = self.cards[card_index]
-            if current_card.color != 'black' and current_card.color != fold_color:
-                continue
-            if current_card > best_card:
-                best_card = current_card
-                best_index = card_index
-
-        return best_index
-
-
-class Player:
-    def __init__(self, name):
-        self.name = name
-        self.cards = []
-    def __repr__(self):
-        return '{} ({})'.format(self.name, ','.join([str(card) for card in self.cards]))
-
-    @property
-    def colors(self):
-        return {
-            "green": list(filter(lambda card: card.color == "green", self.cards)),
-            "yellow": list(filter(lambda card: card.color == "yellow", self.cards)),
-            "blue": list(filter(lambda card: card.color == "blue", self.cards)),
-            "pink": list(filter(lambda card: card.color == "pink", self.cards)),
-            "black": list(filter(lambda card: card.color == "black", self.cards)),
-        }
-
-    def add_card(self, card):
-        self.cards.append(card)
-
-    def find_card_to_play(self, playable_cards, fold, mission, player_index, captain_index):
-        winner_index = fold.get_winner_index()
-
-        if len(playable_cards) == 1:
-            return playable_cards[0]
-
-        if mission in playable_cards:
-            # If the captain is winning the fold and you have the card, you play it!
-            if winner_index == captain_index:
-                return mission
-            # Or if the captain plays after you and the fold is weak, you play it as well (betting)
-            if (captain_index > player_index and max(card.number for card in fold.cards) < 5):
-                return mission
-
-        min_or_max = max if player_index == captain_index else min
-        everything_but_mission = list(filter(lambda card: card != mission, playable_cards))
-        return min_or_max(everything_but_mission)
-
-    def play(self, fold, mission, player_index, captain_index):
-        card = None
-
-        if len(fold.cards) == 0:
-            # if fold is empty, play random
-            random.shuffle(self.cards)
-            card = self.cards.pop()
-        else:
-            card_color = fold.cards[0].color
-            cards_with_same_color = list(filter(lambda card: card.color == card_color, self.cards))
-
-            if len(cards_with_same_color) == 0:
-                black_cards = list(filter(lambda card: card.color == 'black', self.cards))
-                if len(black_cards) == 0:
-                    card = self.find_card_to_play(self.cards, fold, mission, player_index, captain_index)
-                    self.cards.remove(card)
-                else:
-                    max_black_card = max(black_cards, key=lambda card: card.number)
-                    self.cards.remove(max_black_card)
-                    card = max_black_card
-            else:
-                card = self.find_card_to_play(cards_with_same_color, fold, mission, player_index, captain_index)
-                self.cards.remove(card)
-
-        fold.add_card(card)
-        print('{} plays {} on fold {}'.format(self.name, card, fold))
-
+    def play(self):
+        self.start_round()
+        # each player plays
+        
+        self.end_round()
 
 class Turn:
-    def __init__(self, players, index, mission):
-        self.fold = Fold()
-        self.players = players
-        self.index = index
-        self.mission = mission
+    def __init__(self):
+        self.player = None # the player of the turn
+        self.actions = [] # list of actions performed during the turn
 
-    # Return winner_index, mission_completed
-    def play(self, captain_index):
-        print('##########################')
-        print('Turn n°{} | Mission {}'.format(self.index, self.mission))
-        print('--------------------------')
-        for index, player in enumerate(self.players):
-            player.play(self.fold, self.mission, index, captain_index)
 
-        winner_index = self.fold.get_winner_index()
-        mission_completed = self.mission in self.fold.cards
-        return winner_index, mission_completed
+    
+class Player: # Players have a name, a score 
+    def __init__(self):
+        self.name = None
+        self.score = None
+        self.setup_actions = [] # during setup of the game
+        self.start_actions = [] # at the beginning of each round
+        self.regular_actions = [] # actions during the turn
+        self.interrupt_actions = [] # actions during the another player's turn 
+        self.end_actions = [] # actions at the end of the round
+
+    def register_setup_action(self):
+        self.setup_actions = []
+
+    def register_start_actions(self):
+        self.start_actions = []
+
+    def register_regular_actions(self):
+        self.regular_actions = []
+
+    def register_interrupt_actions(self):
+        
+
+class Bot(Player): # Bots are players that can implement automatic strategies
+    pass
+
+class Human(Player): # Humans are asked what to play
+    pass

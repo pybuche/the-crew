@@ -12,7 +12,7 @@ def draw_mission(mission_deck, players, mission_number):
     mission = MISSION_DATABASE[mission_number]
     if mission[0] == 0:
         # special mission
-        modifiers = mission[1]
+        modifier = mission[1]
         if modifier[0] == -1: # first special mission
             pass
         elif modifier[0] == -2: # second special mission
