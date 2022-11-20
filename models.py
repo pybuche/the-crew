@@ -1,8 +1,14 @@
 import random
 
+# General structure of a Game
+
+class GameState:
+    def __init__(self,players):
+        self.players = players 
+        ## add the relevant data structures to describe the state of the game
+
 class Game:
-    def __init__(self,players,state = None):
-        self.players = players # list of players in the game
+    def __init__(self,state):
         self.rounds = [] # list of played rounds
         self.state = state # determines the game state (map, tokens, deck, discard pile...)
         self.history = []
@@ -15,7 +21,7 @@ class Game:
         # This stage may or may not require actions from the players
         # the crew: determine which mission to play
         # tarot or coinche : annonces
-        for p in self.players:
+        for p in self.state.players:
             p.play_setup_action(self.state)
 
     def game_over(self): 
@@ -27,7 +33,7 @@ class Game:
     def play(self):
         # play the game
         self.setup_game()
-        while ~self.game_over:
+        while not self.game_over:
             round = Round(self)
             round.play()
 
@@ -48,16 +54,16 @@ class Round:
         # (i.e. determine who is the next first player for the next round)
 
         # allow players to do end of turn actions
-        for p in self.game.players:
+        for p in self.game.state.players:
             p.play_end_actions(self.game.state)
             
     def play(self):
         self.start_round()
 
         # each player plays
-        for p in self.game.players:
+        for p in self.game.state.players:
             p.play_regular_actions(self.game.state)
-            for p in self.game.players:
+            for p in self.game.state.players:
                 p.play_interrupt_actions(self.game.state)
                 
         self.end_round()
@@ -65,14 +71,13 @@ class Round:
 class Player: # Players have a name, a score 
     def __init__(self,name):
         self.name = name
-        self.score = 0
-        self.setup_actions = [] # during setup of the game
-        self.start_actions = [] # at the beginning of each round
-        self.regular_actions = [] # actions during the turn
-        self.interrupt_actions = [] # actions during the another player's turn 
-        self.end_actions = [] # actions at the end of the round
+        self.register_setup_actions() # during setup phase
+        self.register_start_actions() # at the beginning of each round
+        self.register_regular_actions() # actions during the turn
+        self.register_interrupt_actions() # actions during the another player's turn 
+        self.register_end_actions() # actions at the end of the round
 
-    def register_setup_action(self):
+    def register_setup_actions(self):
         # define a list of functions that take the game as input
         self.setup_actions = []
 
@@ -88,9 +93,8 @@ class Player: # Players have a name, a score
     def register_end_actions(self):
         self.end_actions = []
 
-
 class Bot(Player): # Bots are players that can implement automatic strategies
-    def play_setup_action(self,game_state):
+    def play_setup_actions(self,game_state):
         if self.setup_actions:
             action = random.choice(self.setup_actions)
             action(game_state)
@@ -116,44 +120,48 @@ class Bot(Player): # Bots are players that can implement automatic strategies
             action(game_state)
 
     def __repr__(self):
-        return "Bot: {}".format(self.name)
+        return "Bot_{}".format(self.name)
 
 class Human(Player): # Humans are asked what to play
     def menu_select(self,options):
-        print(options)
-        choice = input(">> ")
-        choice = int(choice)
-        try:
-            selection = options[choice]
-        except IndexError:
-            print("Invalid selection, please try again.\n")
-            self.menu_select(options)
-        return selection
+        if len(options) == 1:
+            print(options)
+            return 0,options[0]
+        else:
+            print(options)
+            index = input(">> ")
+            try:
+                index = int(index)
+                selection = options[index]
+            except:
+                print("Invalid selection, please try again.\n")
+                self.menu_select(options)
+            return index,selection
 
-    def play_setup_action(self,game_state):
+    def play_setup_actions(self,game_state):
         if self.setup_actions:
-            action = self.menu_select(self.setup_actions)
+            _,action = self.menu_select(self.setup_actions)
             action(game_state)
 
     def play_start_actions(self,game_state):
         if self.start_actions:
-            action = self.menu_select(self.start_actions)
+            _,action = self.menu_select(self.start_actions)
             action(game_state)
 
     def play_regular_actions(self,game_state):
         if self.regular_actions:
-            action = self.menu_select(self.regular_actions)
+            _,action = self.menu_select(self.regular_actions)
             action(game_state)
 
     def play_interrupt_actions(self,game_state):
         if self.interrupt_actions:
-            action = self.menu_select(self.interrupt_actions)
+            _,action = self.menu_select(self.interrupt_actions)
             action(game_state)
 
     def play_end_actions(self,game_state):
         if self.end_actions:
-            action = self.menu_select(self.end_actions)
+            _,action = self.menu_select(self.end_actions)
             action(game_state)
 
     def __repr__(self):
-        return "Human: {}".format(self.name)
+        return "Human_{}".format(self.name)

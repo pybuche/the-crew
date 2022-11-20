@@ -1,12 +1,13 @@
-from models import *
+from the_crew import *
 
 players = [
-    Bot("Bot0"),
-    Bot("Bot1"),
-    Bot("Bot2"),
-    Bot("Bot3"),
-    Human("Human")
+    Bot("Lucas"),
+    Bot("Pierrick"),
+    Bot("Fabiana"),
+    Bot("Marie"),
+    Human("Martin")
 ]
 
-g = Game(players)
-g.play()
+State = GameState(players) 
+Game = TheCrew(State)
+Game.play()
