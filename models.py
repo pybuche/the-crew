@@ -46,7 +46,7 @@ class Round:
         # (i.e. Galerapagos weather card, food and water supply)
 
         # allow players to play beginning of turn actions
-        for p in self.game.players:
+        for p in self.game.state.players:
             p.play_start_actions(self.game.state)
     
     def end_round(self):
