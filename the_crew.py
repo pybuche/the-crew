@@ -61,6 +61,20 @@ class GameState:
 
 class TheCrew(models.Game):
 
+    def game_over(self):
+        empty_hands = True
+        missions_done = True
+        for p in self.state.players:
+            if self.state.hands[p]:
+                empty_hands = False
+            if self.state.missions[p]:
+                missions_done = False
+
+        if missions_done:
+            print("you won!")
+        
+        return empty_hands or missions_done
+
     def setup_game(self):
         CARD_COLORS = ['green', 'yellow', 'blue', 'pink']
 

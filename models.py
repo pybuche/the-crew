@@ -12,7 +12,6 @@ class Game:
         self.rounds = [] # list of played rounds
         self.state = state # determines the game state (map, tokens, deck, discard pile...)
         self.history = []
-        self.winner = []
 
     def setup_game(self):
         # initialize the game state (shuffle and deal cards, distribute tokens,...)
