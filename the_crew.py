@@ -77,9 +77,25 @@ class GameState:
         self.discard = []
         self.fold = Fold()
 
-    def discard_fold(self):
-        self.discard.append(self.fold.copy())
+    def end_round(self):
+        # check if mission was fullfilled
+        self.mission_complete()
+        # promote winner to captain
+        self.promote_to_captain(self.fold.leader())
+        # discard fold
+        self.discard.append(self.fold)
+        # new empty fold
         self.fold = Fold()
+
+    def mission_complete(self):
+        # check if a mission was done in the fold
+        for player,card in self.fold.content:
+            for mission in self.missions[player]:
+                if mission.color == card.color and mission.number == card.number:
+                    # pop mission if complete
+                    print(str(player) + 'completed mission' + str(mission))
+                    self.missions[player].remove(mission)
+                    break
 
     def admissible_cards(self,player):
         if self.fold.isempty():
@@ -106,8 +122,9 @@ class GameState:
         else:
             print('You cannot play this card!')
 
-    def promote_to_captain(self,player_idx):
-         self.players = [self.players[(idx + player_idx) % len(self.players)] for idx in range(len(self.players))]
+    def promote_to_captain(self,player):
+        player_idx = self.players.index(player)
+        self.players = self.players[player_idx:] + self.players[:player_idx]
 
     def __repr__(self):
         reprstr = ''
@@ -116,7 +133,9 @@ class GameState:
                 + '\n\tHand: ' + ','.join([str(card) for card in self.hands[p]]) \
                 + '\n\tMissions: ' + ','.join([str(card) for card in self.missions[p]]) \
                 + '\n'
-        reprstr = reprstr + 'Discard: ' + ','.join([str(card) for card in self.discard])
+        reprstr = reprstr + '\nFold: ' + str(self.fold)      
+        reprstr = reprstr + '\nDiscard: ' + ','.join([str(card) for card in self.discard])
+        
         return reprstr
 
 class TheCrew(models.Game):
@@ -146,14 +165,14 @@ class TheCrew(models.Game):
         # deal cards to players
         while len(deck) > 0:
             # works only if the number of cards is a multiple of the number of players
-            for (index, player) in enumerate(self.state.players): 
+            for player in self.state.players: 
                 card = deck.pop()
                 if card.color == 'black' and card.number == 4:
-                    captain_index = index
+                    captain = player
                 self.state.hands[player].append(card)
    
         # The captain starts the first round : reorder players
-        self.state.promote_to_captain(captain_index)
+        self.state.promote_to_captain(captain)
 
         # Draw a mission
         mission_deck = [Mission(color, number) for color in CARD_COLORS for number in range(1, 10)]
@@ -166,9 +185,10 @@ class TheCrew(models.Game):
             p.play_setup_actions(self.state, drawn_missions)
 
 class Round(models.Round):
-    def play(self):
-        super().play()
-        self.game.state.discard_fold()
+
+    def end_round(self):
+        super().end_round()
+        self.game.state.end_round()
 
 class Human(models.Human):
 
@@ -181,12 +201,22 @@ class Human(models.Human):
         # define a list of functions that take the game as input
         self.setup_actions = [self.select_mission]
 
+    def register_regular_actions(self):
+        self.regular_actions = [self.play_card]
+
     def select_mission(self, game_state,drawn_missions):
         if drawn_missions:
             index,mission = self.menu_select(drawn_missions)
             game_state.missions[self].append(mission)
             drawn_missions.pop(index)
-        
+
+    def play_card(self,game_state):
+        # select admissible cards
+        admissible_cards = game_state.admissible_cards(self)
+        _,card_to_play = self.menu_select(admissible_cards)
+        game_state.play_card(self,card_to_play)
+
+
 class Bot(models.Bot):
     
     def play_setup_actions(self,game_state,drawn_missions):
