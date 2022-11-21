@@ -1,8 +1,6 @@
 import models 
 import random
 
-#use  super()
-
 class Card:
     def __init__(self, color, number):
         self.color = color
@@ -39,6 +37,36 @@ class Communication:
     def __repr__(self):
         return '{},{}'.format(str(self.card), self.token)
 
+class Fold:
+    def __init__(self):
+        # list of (player,card) tuples
+        self.content = []
+
+    def __repr__(self):
+        return ','.join([str(p) + ': ' + str(card) + '\n' for p,card in self.content])
+
+    def isempty(self):
+        if self.content:
+           return False
+        else:
+            return True
+
+    def add_card(self,player,card):
+        self.content.append((player,card))
+
+    def color(self):
+        if self.content:
+            first_player, first_card = self.content[0]
+            return first_card.color
+        else:
+            return None
+
+    def leader(self):
+        if self.content:
+            return max(self.content,key=lambda item: item[1])[0]
+        else:
+            return None
+
 class GameState:
     def __init__(self,players):
         self.players = players
@@ -47,6 +75,36 @@ class GameState:
         self.communication = {p:[] for p in players}
         self.has_communicated = {p:False for p in players}
         self.discard = []
+        self.fold = Fold()
+
+    def discard_fold(self):
+        self.discard.append(self.fold.copy())
+        self.fold = Fold()
+
+    def admissible_cards(self,player):
+        if self.fold.isempty():
+            # first to play, you can play anything
+            return [cards for cards in self.hands[player]]
+        else:
+            # if you have the required color, you must play that
+            required_color = [cards for cards in self.hands[player] if cards.color == self.fold.color()]
+            if required_color:
+                return required_color
+            else:
+                # if not you need to cut
+                trumps = [cards for cards in self.hands[player] if cards.color == 'black']
+                if trumps:
+                    return trumps
+                else:
+                    # you have nothing, play whatever
+                    return [cards for cards in self.hands[player]]
+
+    def play_card(self,player,card):
+        if card in self.admissible_cards(player):
+            self.hands[player].remove(card)
+            self.fold.add_card(player,card)
+        else:
+            print('You cannot play this card!')
 
     def promote_to_captain(self,player_idx):
          self.players = [self.players[(idx + player_idx) % len(self.players)] for idx in range(len(self.players))]
@@ -108,7 +166,9 @@ class TheCrew(models.Game):
             p.play_setup_actions(self.state, drawn_missions)
 
 class Round(models.Round):
-    pass
+    def play(self):
+        super().play()
+        self.game.state.discard_fold()
 
 class Human(models.Human):
 
@@ -138,8 +198,17 @@ class Bot(models.Bot):
         # define a list of functions that take the game as input
         self.setup_actions = [self.select_mission]
 
+    def register_regular_actions(self):
+        self.regular_actions = [self.play_card]
+    
     def select_mission(self,game_state,drawn_missions):
         if drawn_missions:
             # select the first card
             game_state.missions[self].append(drawn_missions[0])
             drawn_missions.pop(0)
+
+    def play_card(self,game_state):
+        # select admissible cards
+        admissible_cards = game_state.admissible_cards(self)
+        card_to_play = random.choice(admissible_cards)
+        game_state.play_card(self,card_to_play)

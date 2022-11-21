@@ -12,6 +12,7 @@ class Game:
         self.rounds = [] # list of played rounds
         self.state = state # determines the game state (map, tokens, deck, discard pile...)
         self.history = []
+        self.setup_game()
 
     def setup_game(self):
         # initialize the game state (shuffle and deal cards, distribute tokens,...)
@@ -31,10 +32,10 @@ class Game:
 
     def play(self):
         # play the game
-        self.setup_game()
         while not self.game_over:
             round = Round(self)
             round.play()
+            print(self.state)
 
 class Round:
     def __init__(self,game):
