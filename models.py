@@ -25,8 +25,6 @@ class Game:
         return False
 
     def play(self):
-        print('Let\'s play!')
-
         # play setup actions
         for p in self.players:
             p.play_setup_actions(self)
@@ -102,35 +100,28 @@ class Player: # Players have a name, a score
         self.round_end_actions = []
 
 class RandomBot(Player):
-    def play_setup_actions(self,game):
-        if self.setup_actions:
-            action = random.choice(self.setup_actions)
+    def do_action(self,game,action_list):
+        if action_list:
+            action = random.choice(action_list)
             action(game)
 
+    def play_setup_actions(self,game):
+        self.do_action(game,self.setup_actions)
+    
     def play_end_actions(self,game):
-        if self.end_actions:
-            action = random.choice(self.end_actions)
-            action(game)
+        self.do_action(game,self.end_actions)
 
     def play_round_start_actions(self,game):
-        if self.round_start_actions:
-            action = random.choice(self.round_start_actions)
-            action(game)
+        self.do_action(game,self.round_start_actions)
 
     def play_round_regular_actions(self,game):
-        if self.round_regular_actions:
-            action = random.choice(self.round_regular_actions)
-            action(game)
+        self.do_action(game,self.round_regular_actions)
 
     def play_round_interrupt_actions(self,game):
-        if self.round_interrupt_actions:
-            action = random.choice(self.round_interrupt_actions)
-            action(game)
+        self.do_action(game,self.round_interrupt_actions)
 
     def play_round_end_actions(self,game):
-        if self.round_end_actions:
-            action = random.choice(self.round_end_actions)
-            action(game)
+        self.do_action(game,self.round_end_actions)
 
     def __repr__(self):
         return "Bot_{}".format(self.name)
@@ -151,35 +142,28 @@ class Human(Player): # Humans are asked what to play
                 self.menu_select(options)
             return index,selection
 
-    def play_setup_actions(self,game):
-        if self.setup_actions:
-            _,action = self.menu_select(self.setup_actions)
+    def do_action(self,game,action_list):
+        if action_list:
+            _,action = self.menu_select(action_list)
             action(game)
+
+    def play_setup_actions(self,game):
+       self.do_action(game,self.setup_actions)
     
     def play_end_actions(self,game):
-        if self.end_actions:
-            _,action = self.menu_select(self.end_actions)
-            action(game)
+        self.do_action(game,self.end_actions)
 
     def play_round_start_actions(self,game):
-        if self.round_start_actions:
-            _,action = self.menu_select(self.round_start_actions)
-            action(game)
+        self.do_action(game,self.round_start_actions)
 
     def play_round_regular_actions(self,game):
-        if self.round_regular_actions:
-            _,action = self.menu_select(self.round_regular_actions)
-            action(game)
+        self.do_action(game,self.round_regular_actions)
 
-    def play_round_nterrupt_actions(self,game):
-        if self.round_interrupt_actions:
-            _,action = self.menu_select(self.round_interrupt_actions)
-            action(game)
+    def play_round_interrupt_actions(self,game):
+        self.do_action(game,self.round_interrupt_actions)
 
     def play_round_end_actions(self,game):
-        if self.round_end_actions:
-            _,action = self.menu_select(self.round_end_actions)
-            action(game)
+        self.do_action(game,self.round_end_actions)
 
     def __repr__(self):
         return "Human_{}".format(self.name)

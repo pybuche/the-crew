@@ -1,5 +1,6 @@
 from the_crew import *
 
+# with human player
 players = [
     Bot("Lucas"),
     Bot("Pierrick"),

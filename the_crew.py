@@ -132,6 +132,22 @@ class TheCrew(models.Game):
         
         return empty_hands or missions_done
 
+    def play(self):
+        print('Let\'s play!')
+        
+        # play setup actions
+        for p in self.players:
+            p.play_setup_actions(self)
+
+        # play the game
+        while not self.game_over():
+            print(self)
+            round = Round(self)
+            round.play()
+
+        # end game
+        self.end_game()
+
     def __repr__(self):
         reprstr = ''
         for p in self.players:
@@ -142,18 +158,11 @@ class TheCrew(models.Game):
         return reprstr
 
 class Round(models.Round):
-
     def end_round(self):
         super().end_round()
         self.game.end_round()
 
 class Human(models.Human):
-
-    def play_setup_actions(self,game,drawn_missions):
-        if self.setup_actions:
-            _,action = self.menu_select(self.setup_actions)
-            action(game,drawn_missions)
-
     def register_setup_actions(self):
         # define a list of functions that take the game as input
         self.setup_actions = [self.select_mission]
@@ -164,7 +173,7 @@ class Human(models.Human):
     def select_mission(self, game):
         if game.drawn_missions:
             index,mission = self.menu_select(game.drawn_missions)
-            game.missions[self].append(mission)
+            game.hand_missions[self].append(mission)
             game.drawn_missions.pop(index)
 
     def play_card(self,game):
@@ -193,3 +202,7 @@ class Bot(models.RandomBot):
         admissible_cards = game.admissible_cards(self)
         card_to_play = random.choice(admissible_cards)
         game.play_card(self,card_to_play)
+
+class SmartBot(models.Player):
+    #TODO
+    pass
