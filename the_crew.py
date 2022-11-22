@@ -74,6 +74,7 @@ class GameState:
         self.missions = {p:[] for p in players}
         self.communication = {p:[] for p in players}
         self.has_communicated = {p:False for p in players}
+        self.resolved_missions = []
         self.discard = []
         self.fold = Fold()
 
@@ -96,6 +97,7 @@ class GameState:
                         # pop mission if complete
                         print(str(player) + ' completed mission ' + str(mission))
                         self.missions[player].remove(mission)
+                        self.resolved_missions.append(mission)
                         break
 
     def admissible_cards(self,player):
@@ -151,6 +153,8 @@ class TheCrew(models.Game):
 
         if missions_done:
             print("you won!")
+
+        #TODO check the modifiers in resolved_missions are in the right order
         
         return empty_hands or missions_done
 
