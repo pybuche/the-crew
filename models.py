@@ -7,6 +7,36 @@ class GameState:
         self.players = players 
         ## add the relevant data structures to describe the state of the game
 
+class Game:
+    def __init__(self,state):
+        self.rounds = [] # list of played rounds
+        self.state = state # determines the game state (map, tokens, deck, discard pile...)
+        self.history = []
+        self.setup_game()
+
+    def setup_game(self):
+        # initialize the game state (shuffle and deal cards, distribute tokens,...)
+        # determine which player starts the first round 
+
+        # This stage may or may not require actions from the players
+        # the crew: determine which mission to play
+        # tarot or coinche : annonces
+        for p in self.state.players:
+            p.play_setup_action(self.state)
+
+    def game_over(self): 
+        # use the game state to determine if the game is over
+        # determine the winner if any
+        # return true or false
+        return False
+
+    def play(self):
+        # play the game
+        while not self.game_over():
+            print(self.state)
+            round = Round(self)
+            round.play()
+
 class Round:
     def __init__(self,game):
         self.game = game # access game state and players
@@ -37,37 +67,6 @@ class Round:
                 p.play_interrupt_actions(self.game.state)
                 
         self.end_round()
-
-class Game:
-    def __init__(self,state):
-        self.rounds = [] # list of played rounds
-        self.state = state # determines the game state (map, tokens, deck, discard pile...)
-        self.history = []
-        self.setup_game()
-
-    def setup_game(self):
-        # initialize the game state (shuffle and deal cards, distribute tokens,...)
-        # determine which player starts the first round 
-
-        # This stage may or may not require actions from the players
-        # the crew: determine which mission to play
-        # tarot or coinche : annonces
-        for p in self.state.players:
-            p.play_setup_action(self.state)
-
-    def game_over(self): 
-        # use the game state to determine if the game is over
-        # determine the winner if any
-        # return true or false
-        return False
-
-    def play(self):
-        # play the game
-        print('Let\'s play!')
-        while not self.game_over():
-            round = Round(self)
-            round.play()
-            print(self.state)
  
 class Player: # Players have a name, a score 
     def __init__(self,name):

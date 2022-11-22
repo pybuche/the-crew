@@ -90,12 +90,13 @@ class GameState:
     def mission_complete(self):
         # check if a mission was done in the fold
         for player,card in self.fold.content:
-            for mission in self.missions[player]:
-                if mission.color == card.color and mission.number == card.number:
-                    # pop mission if complete
-                    print(str(player) + 'completed mission' + str(mission))
-                    self.missions[player].remove(mission)
-                    break
+            if player == self.fold.leader():
+                for mission in self.missions[player]:
+                    if mission.color == card.color and mission.number == card.number:
+                        # pop mission if complete
+                        print(str(player) + ' completed mission ' + str(mission))
+                        self.missions[player].remove(mission)
+                        break
 
     def admissible_cards(self,player):
         if self.fold.isempty():
@@ -119,10 +120,12 @@ class GameState:
         if card in self.admissible_cards(player):
             self.hands[player].remove(card)
             self.fold.add_card(player,card)
+            print(str(player) + ' played ' + str(card))
         else:
             print('You cannot play this card!')
 
     def promote_to_captain(self,player):
+        print(str(player) + ' is the captain!')
         player_idx = self.players.index(player)
         self.players = self.players[player_idx:] + self.players[:player_idx]
 
@@ -132,10 +135,7 @@ class GameState:
             reprstr = reprstr + str(p) \
                 + '\n\tHand: ' + ','.join([str(card) for card in self.hands[p]]) \
                 + '\n\tMissions: ' + ','.join([str(card) for card in self.missions[p]]) \
-                + '\n'
-        reprstr = reprstr + '\nFold: ' + str(self.fold)      
-        reprstr = reprstr + '\nDiscard: ' + ','.join([str(card) for card in self.discard])
-        
+                + '\n'  
         return reprstr
 
 class TheCrew(models.Game):
@@ -181,8 +181,18 @@ class TheCrew(models.Game):
         #TODO implement mission array
         drawn_missions = [mission_deck.pop(0), mission_deck.pop(0)]
 
+        print(self.state)
+
         for p in self.state.players:
             p.play_setup_actions(self.state, drawn_missions)
+    
+    def play(self):
+        # play the game
+        print('Let\'s play!')
+        while not self.game_over():
+            print(self.state)
+            round = Round(self)
+            round.play()
 
 class Round(models.Round):
 
