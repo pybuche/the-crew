@@ -28,12 +28,12 @@ class Game:
         print('Let\'s play!')
 
         # play setup actions
-        for p in self.state.players:
-            p.play_setup_actions(self.state)
+        for p in self.players:
+            p.play_setup_actions(self)
 
         # play the game
         while not self.game_over():
-            print(self.state)
+            print(self)
             round = Round(self)
             round.play()
 
@@ -50,7 +50,7 @@ class Round:
 
         # allow players to play beginning of turn actions
         for p in self.game.players:
-            p.play_start_actions(self.game)
+            p.play_round_start_actions(self.game)
     
     def end_round(self):
         # process any events that may occur after players have played
@@ -58,16 +58,16 @@ class Round:
 
         # allow players to do end of turn actions
         for p in self.game.players:
-            p.play_end_actions(self.game)
+            p.play_round_end_actions(self.game)
             
     def play(self):
         self.start_round()
 
         # each player plays
         for p in self.game.players:
-            p.play_regular_actions(self.game)
+            p.play_round_regular_actions(self.game)
             for p in self.game.players:
-                p.play_interrupt_actions(self.game)
+                p.play_round_interrupt_actions(self.game)
                 
         self.end_round()
  
@@ -101,34 +101,34 @@ class Player: # Players have a name, a score
     def register_round_end_actions(self):
         self.round_end_actions = []
 
-class RandomBot(Player): # Bots are players that can implement automatic strategies
+class RandomBot(Player):
     def play_setup_actions(self,game):
         if self.setup_actions:
             action = random.choice(self.setup_actions)
             action(game)
 
-     def play_end_actions(self,game):
+    def play_end_actions(self,game):
         if self.end_actions:
             action = random.choice(self.end_actions)
             action(game)
 
     def play_round_start_actions(self,game):
-        if self.start_actions:
+        if self.round_start_actions:
             action = random.choice(self.round_start_actions)
             action(game)
 
     def play_round_regular_actions(self,game):
-        if self.regular_actions:
+        if self.round_regular_actions:
             action = random.choice(self.round_regular_actions)
             action(game)
 
     def play_round_interrupt_actions(self,game):
-        if self.interrupt_actions:
+        if self.round_interrupt_actions:
             action = random.choice(self.round_interrupt_actions)
             action(game)
 
     def play_round_end_actions(self,game):
-        if self.end_actions:
+        if self.round_end_actions:
             action = random.choice(self.round_end_actions)
             action(game)
 
@@ -162,22 +162,22 @@ class Human(Player): # Humans are asked what to play
             action(game)
 
     def play_round_start_actions(self,game):
-        if self.start_actions:
+        if self.round_start_actions:
             _,action = self.menu_select(self.round_start_actions)
             action(game)
 
     def play_round_regular_actions(self,game):
-        if self.regular_actions:
+        if self.round_regular_actions:
             _,action = self.menu_select(self.round_regular_actions)
             action(game)
 
     def play_round_nterrupt_actions(self,game):
-        if self.interrupt_actions:
+        if self.round_interrupt_actions:
             _,action = self.menu_select(self.round_interrupt_actions)
             action(game)
 
     def play_round_end_actions(self,game):
-        if self.end_actions:
+        if self.round_end_actions:
             _,action = self.menu_select(self.round_end_actions)
             action(game)
 

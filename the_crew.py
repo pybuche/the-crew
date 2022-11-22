@@ -157,14 +157,14 @@ class Human(models.Human):
         # define a list of functions that take the game as input
         self.setup_actions = [self.select_mission]
 
-    def register_regular_actions(self):
-        self.regular_actions = [self.play_card]
+    def register_round_regular_actions(self):
+        self.round_regular_actions = [self.play_card]
 
-    def select_mission(self, game,drawn_missions):
-        if drawn_missions:
-            index,mission = self.menu_select(drawn_missions)
+    def select_mission(self, game):
+        if game.drawn_missions:
+            index,mission = self.menu_select(game.drawn_missions)
             game.missions[self].append(mission)
-            drawn_missions.pop(index)
+            game.drawn_missions.pop(index)
 
     def play_card(self,game):
         # select admissible cards
@@ -172,24 +172,19 @@ class Human(models.Human):
         _,card_to_play = self.menu_select(admissible_cards)
         game.play_card(self,card_to_play)
 
-class Bot(models.Bot):
-    
-    def play_setup_actions(self,game,drawn_missions):
-        if self.setup_actions:
-            action = random.choice(self.setup_actions)
-            action(game,drawn_missions)
+class Bot(models.RandomBot):
 
     def register_setup_actions(self):
         # define a list of functions that take the game as input
         self.setup_actions = [self.select_mission]
 
-    def register_regular_actions(self):
-        self.regular_actions = [self.play_card]
+    def register_round_regular_actions(self):
+        self.round_regular_actions = [self.play_card]
     
     def select_mission(self,game):
         if game.drawn_missions:
             # select the first card
-            game.missions[self].append(game.drawn_missions[0])
+            game.hand_missions[self].append(game.drawn_missions[0])
             game.drawn_missions.pop(0)
 
     def play_card(self,game):

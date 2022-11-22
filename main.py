@@ -8,10 +8,10 @@ players = [
     Human("Martin")
 ]
 
-State = GameState(players) 
-Game = TheCrew(State)
+Game = TheCrew(players)
 Game.play()
 
+# with bots only
 players = [
     Bot("Lucas"),
     Bot("Pierrick"),
@@ -20,6 +20,5 @@ players = [
     Bot("Martin")
 ]
 
-State = GameState(players) 
-Game = TheCrew(State)
+Game = TheCrew(players)
 Game.play()

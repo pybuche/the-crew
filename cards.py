@@ -7,9 +7,9 @@ class Deck:
     def isempty(self):
         if self.cards:
             return False
-        else
+        else:
             return True
-            
+
     def shuffle(self):
         random.shuffle(self.cards)
 
