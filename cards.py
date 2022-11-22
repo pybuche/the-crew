@@ -21,9 +21,10 @@ class Deck:
         return self.cards.pop(0)
 
 class Card:
-    def __init__(self, color, number):
+    def __init__(self, color, number, trump_color=None):
         self.color = color
         self.number = number
+        self.trump_color = trump_color
 
     def __repr__(self):
         return '{} {}'.format(self.color, self.number)
@@ -34,10 +35,11 @@ class Card:
     def __gt__(self, other):
         if self.color == other.color:
             return self.number > other.number
-        if self.color == 'black' and other.color != 'black':
-            return True
-        if self.color != 'black' and other.color == 'black':
-            return False
+        if self.trump_color:
+            if self.color == self.trump_color and other.color != self.trump_color:
+                return True
+            if self.color != self.trump_color and other.color == self.trump_color:
+                return False
 
 class Fold:
     def __init__(self):

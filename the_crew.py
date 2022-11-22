@@ -89,10 +89,11 @@ class TheCrew(models.Game):
 
     def setup_game(self):
         CARD_COLORS = ['green', 'yellow', 'blue', 'pink']
+        TRUMP_COLOR = 'black'
 
         # create and shuffle deck of cards
-        deck = [Card(color, number) for color in CARD_COLORS for number in range(1, 10)] \
-            + [Card('black', number) for number in range(1, 5)]
+        deck = [Card(color, number, TRUMP_COLOR) for color in CARD_COLORS for number in range(1, 10)] \
+            + [Card(TRUMP_COLOR, number, TRUMP_COLOR) for number in range(1, 5)]
         random.shuffle(deck)
 
         # deal cards to players
