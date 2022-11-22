@@ -1,17 +1,8 @@
 import random
 
-# General structure of a Game
-
-class GameState:
-    def __init__(self,players):
-        self.players = players 
-        ## add the relevant data structures to describe the state of the game
-
 class Game:
-    def __init__(self,state):
-        self.rounds = [] # list of played rounds
-        self.state = state # determines the game state (map, tokens, deck, discard pile...)
-        self.history = []
+    def __init__(self,players):
+        self.players = players
         self.setup_game()
 
     def setup_game(self):
@@ -21,8 +12,11 @@ class Game:
         # This stage may or may not require actions from the players
         # the crew: determine which mission to play
         # tarot or coinche : annonces
-        for p in self.state.players:
-            p.play_setup_action(self.state)
+        pass
+        
+    def end_game(self):
+        # perform end of game actions, determine who won
+        pass
 
     def game_over(self): 
         # use the game state to determine if the game is over
@@ -31,11 +25,20 @@ class Game:
         return False
 
     def play(self):
+        print('Let\'s play!')
+
+        # play setup actions
+        for p in self.state.players:
+            p.play_setup_actions(self.state)
+
         # play the game
         while not self.game_over():
             print(self.state)
             round = Round(self)
             round.play()
+
+        # end game
+        self.end_game()
 
 class Round:
     def __init__(self,game):
@@ -46,25 +49,25 @@ class Round:
         # (i.e. Galerapagos weather card, food and water supply)
 
         # allow players to play beginning of turn actions
-        for p in self.game.state.players:
-            p.play_start_actions(self.game.state)
+        for p in self.game.players:
+            p.play_start_actions(self.game)
     
     def end_round(self):
         # process any events that may occur after players have played
         # (i.e. determine who is the next first player for the next round)
 
         # allow players to do end of turn actions
-        for p in self.game.state.players:
-            p.play_end_actions(self.game.state)
+        for p in self.game.players:
+            p.play_end_actions(self.game)
             
     def play(self):
         self.start_round()
 
         # each player plays
-        for p in self.game.state.players:
-            p.play_regular_actions(self.game.state)
-            for p in self.game.state.players:
-                p.play_interrupt_actions(self.game.state)
+        for p in self.game.players:
+            p.play_regular_actions(self.game)
+            for p in self.game.players:
+                p.play_interrupt_actions(self.game)
                 
         self.end_round()
  
@@ -72,52 +75,62 @@ class Player: # Players have a name, a score
     def __init__(self,name):
         self.name = name
         self.register_setup_actions() # during setup phase
-        self.register_start_actions() # at the beginning of each round
-        self.register_regular_actions() # actions during the turn
-        self.register_interrupt_actions() # actions during the another player's turn 
+        self.register_round_start_actions() # at the beginning of each round
+        self.register_round_regular_actions() # actions during the turn
+        self.register_round_interrupt_actions() # actions during the another player's turn 
+        self.register_round_end_actions() # actions at the end of the round
         self.register_end_actions() # actions at the end of the round
 
     def register_setup_actions(self):
         # define a list of functions that take the game as input
         self.setup_actions = []
 
-    def register_start_actions(self):
-        self.start_actions = []
-
-    def register_regular_actions(self):
-        self.regular_actions = []
-
-    def register_interrupt_actions(self):
-        self.interrupt_actions = []
-
     def register_end_actions(self):
         self.end_actions = []
 
-class Bot(Player): # Bots are players that can implement automatic strategies
-    def play_setup_actions(self,game_state):
+    # round specific actions
+    def register_round_start_actions(self):
+        self.round_start_actions = []
+
+    def register_round_regular_actions(self):
+        self.round_regular_actions = []
+
+    def register_round_interrupt_actions(self):
+        self.round_interrupt_actions = []
+
+    def register_round_end_actions(self):
+        self.round_end_actions = []
+
+class RandomBot(Player): # Bots are players that can implement automatic strategies
+    def play_setup_actions(self,game):
         if self.setup_actions:
             action = random.choice(self.setup_actions)
-            action(game_state)
+            action(game)
 
-    def play_start_actions(self,game_state):
-        if self.start_actions:
-            action = random.choice(self.start_actions)
-            action(game_state)
-
-    def play_regular_actions(self,game_state):
-        if self.regular_actions:
-            action = random.choice(self.regular_actions)
-            action(game_state)
-
-    def play_interrupt_actions(self,game_state):
-        if self.interrupt_actions:
-            action = random.choice(self.interrupt_actions)
-            action(game_state)
-
-    def play_end_actions(self,game_state):
+     def play_end_actions(self,game):
         if self.end_actions:
             action = random.choice(self.end_actions)
-            action(game_state)
+            action(game)
+
+    def play_round_start_actions(self,game):
+        if self.start_actions:
+            action = random.choice(self.round_start_actions)
+            action(game)
+
+    def play_round_regular_actions(self,game):
+        if self.regular_actions:
+            action = random.choice(self.round_regular_actions)
+            action(game)
+
+    def play_round_interrupt_actions(self,game):
+        if self.interrupt_actions:
+            action = random.choice(self.round_interrupt_actions)
+            action(game)
+
+    def play_round_end_actions(self,game):
+        if self.end_actions:
+            action = random.choice(self.round_end_actions)
+            action(game)
 
     def __repr__(self):
         return "Bot_{}".format(self.name)
@@ -138,30 +151,35 @@ class Human(Player): # Humans are asked what to play
                 self.menu_select(options)
             return index,selection
 
-    def play_setup_actions(self,game_state):
+    def play_setup_actions(self,game):
         if self.setup_actions:
             _,action = self.menu_select(self.setup_actions)
-            action(game_state)
-
-    def play_start_actions(self,game_state):
-        if self.start_actions:
-            _,action = self.menu_select(self.start_actions)
-            action(game_state)
-
-    def play_regular_actions(self,game_state):
-        if self.regular_actions:
-            _,action = self.menu_select(self.regular_actions)
-            action(game_state)
-
-    def play_interrupt_actions(self,game_state):
-        if self.interrupt_actions:
-            _,action = self.menu_select(self.interrupt_actions)
-            action(game_state)
-
-    def play_end_actions(self,game_state):
+            action(game)
+    
+    def play_end_actions(self,game):
         if self.end_actions:
             _,action = self.menu_select(self.end_actions)
-            action(game_state)
+            action(game)
+
+    def play_round_start_actions(self,game):
+        if self.start_actions:
+            _,action = self.menu_select(self.round_start_actions)
+            action(game)
+
+    def play_round_regular_actions(self,game):
+        if self.regular_actions:
+            _,action = self.menu_select(self.round_regular_actions)
+            action(game)
+
+    def play_round_nterrupt_actions(self,game):
+        if self.interrupt_actions:
+            _,action = self.menu_select(self.round_interrupt_actions)
+            action(game)
+
+    def play_round_end_actions(self,game):
+        if self.end_actions:
+            _,action = self.menu_select(self.round_end_actions)
+            action(game)
 
     def __repr__(self):
         return "Human_{}".format(self.name)

@@ -1,24 +1,6 @@
 import models 
 import random
-
-class Card:
-    def __init__(self, color, number):
-        self.color = color
-        self.number = number
-
-    def __repr__(self):
-        return '{} {}'.format(self.color, self.number)
-
-    def __eq__(self, other):
-        return self.color == other.color and self.number == other.number
-
-    def __gt__(self, other):
-        if self.color == other.color:
-            return self.number > other.number
-        if self.color == 'black' and other.color != 'black':
-            return True
-        if self.color != 'black' and other.color == 'black':
-            return False
+from cards import *
 
 class Mission:
     def __init__(self, color, number):
@@ -37,46 +19,20 @@ class Communication:
     def __repr__(self):
         return '{},{}'.format(str(self.card), self.token)
 
-class Fold:
-    def __init__(self):
-        # list of (player,card) tuples
-        self.content = []
-
-    def __repr__(self):
-        return ','.join([str(p) + ': ' + str(card) + '\n' for p,card in self.content])
-
-    def isempty(self):
-        if self.content:
-           return False
-        else:
-            return True
-
-    def add_card(self,player,card):
-        self.content.append((player,card))
-
-    def color(self):
-        if self.content:
-            first_player, first_card = self.content[0]
-            return first_card.color
-        else:
-            return None
-
-    def leader(self):
-        if self.content:
-            return max(self.content,key=lambda item: item[1])[0]
-        else:
-            return None
-
-class GameState:
+class TheCrew(models.Game):
     def __init__(self,players):
-        self.players = players
-        self.hands = {p:[] for p in players}
-        self.missions = {p:[] for p in players}
+
+        # describe the game state
+        self.drawn_missions = []
+        self.hand_cards = {p:[] for p in players}
+        self.hand_missions = {p:[] for p in players}
         self.communication = {p:[] for p in players}
         self.has_communicated = {p:False for p in players}
         self.resolved_missions = []
         self.discard = []
         self.fold = Fold()
+
+        super().__init__(players)
 
     def end_round(self):
         # check if mission was fullfilled
@@ -92,35 +48,35 @@ class GameState:
         # check if a mission was done in the fold
         for player,card in self.fold.content:
             if player == self.fold.leader():
-                for mission in self.missions[player]:
+                for mission in self.hand_missions[player]:
                     if mission.color == card.color and mission.number == card.number:
                         # pop mission if complete
                         print(str(player) + ' completed mission ' + str(mission))
-                        self.missions[player].remove(mission)
+                        self.hand_missions[player].remove(mission)
                         self.resolved_missions.append(mission)
                         break
 
     def admissible_cards(self,player):
         if self.fold.isempty():
             # first to play, you can play anything
-            return [cards for cards in self.hands[player]]
+            return [cards for cards in self.hand_cards[player]]
         else:
             # if you have the required color, you must play that
-            required_color = [cards for cards in self.hands[player] if cards.color == self.fold.color()]
+            required_color = [cards for cards in self.hand_cards[player] if cards.color == self.fold.color()]
             if required_color:
                 return required_color
             else:
                 # if not you need to cut
-                trumps = [cards for cards in self.hands[player] if cards.color == 'black']
+                trumps = [cards for cards in self.hand_cards[player] if cards.color == 'black']
                 if trumps:
                     return trumps
                 else:
                     # you have nothing, play whatever
-                    return [cards for cards in self.hands[player]]
+                    return [cards for cards in self.hand_cards[player]]
 
     def play_card(self,player,card):
         if card in self.admissible_cards(player):
-            self.hands[player].remove(card)
+            self.hand_cards[player].remove(card)
             self.fold.add_card(player,card)
             print(str(player) + ' played ' + str(card))
         else:
@@ -130,33 +86,6 @@ class GameState:
         print(str(player) + ' is the captain!')
         player_idx = self.players.index(player)
         self.players = self.players[player_idx:] + self.players[:player_idx]
-
-    def __repr__(self):
-        reprstr = ''
-        for p in self.players:
-            reprstr = reprstr + str(p) \
-                + '\n\tHand: ' + ','.join([str(card) for card in self.hands[p]]) \
-                + '\n\tMissions: ' + ','.join([str(card) for card in self.missions[p]]) \
-                + '\n'  
-        return reprstr
-
-class TheCrew(models.Game):
-
-    def game_over(self):
-        empty_hands = True
-        missions_done = True
-        for p in self.state.players:
-            if self.state.hands[p]:
-                empty_hands = False
-            if self.state.missions[p]:
-                missions_done = False
-
-        if missions_done:
-            print("you won!")
-
-        #TODO check the modifiers in resolved_missions are in the right order
-        
-        return empty_hands or missions_done
 
     def setup_game(self):
         CARD_COLORS = ['green', 'yellow', 'blue', 'pink']
@@ -169,47 +98,60 @@ class TheCrew(models.Game):
         # deal cards to players
         while len(deck) > 0:
             # works only if the number of cards is a multiple of the number of players
-            for player in self.state.players: 
+            for player in self.players: 
                 card = deck.pop()
                 if card.color == 'black' and card.number == 4:
                     captain = player
-                self.state.hands[player].append(card)
+                self.hand_cards[player].append(card)
    
         # The captain starts the first round : reorder players
-        self.state.promote_to_captain(captain)
+        self.promote_to_captain(captain)
 
         # Draw a mission
         mission_deck = [Mission(color, number) for color in CARD_COLORS for number in range(1, 10)]
         random.shuffle(mission_deck)
 
         #TODO implement mission array
-        drawn_missions = [mission_deck.pop(0), mission_deck.pop(0)]
+        self.drawn_missions = [mission_deck.pop(0), mission_deck.pop(0)]
 
-        print(self.state)
+        print(self)
 
-        for p in self.state.players:
-            p.play_setup_actions(self.state, drawn_missions)
-    
-    def play(self):
-        # play the game
-        print('Let\'s play!')
-        while not self.game_over():
-            print(self.state)
-            round = Round(self)
-            round.play()
+    def game_over(self): 
+        empty_hands = True
+        missions_done = True
+        for p in self.players:
+            if self.hand_cards[p]:
+                empty_hands = False
+            if self.hand_missions[p]:
+                missions_done = False
+
+        #TODO check the modifiers in resolved_missions are in the right order
+        if missions_done:
+            print("you won!")
+        
+        return empty_hands or missions_done
+
+    def __repr__(self):
+        reprstr = ''
+        for p in self.players:
+            reprstr = reprstr + str(p) \
+                + '\n\tHand: ' + ','.join([str(card) for card in self.hand_cards[p]]) \
+                + '\n\tMissions: ' + ','.join([str(card) for card in self.hand_missions[p]]) \
+                + '\n'  
+        return reprstr
 
 class Round(models.Round):
 
     def end_round(self):
         super().end_round()
-        self.game.state.end_round()
+        self.game.end_round()
 
 class Human(models.Human):
 
-    def play_setup_actions(self,game_state,drawn_missions):
+    def play_setup_actions(self,game,drawn_missions):
         if self.setup_actions:
             _,action = self.menu_select(self.setup_actions)
-            action(game_state,drawn_missions)
+            action(game,drawn_missions)
 
     def register_setup_actions(self):
         # define a list of functions that take the game as input
@@ -218,25 +160,24 @@ class Human(models.Human):
     def register_regular_actions(self):
         self.regular_actions = [self.play_card]
 
-    def select_mission(self, game_state,drawn_missions):
+    def select_mission(self, game,drawn_missions):
         if drawn_missions:
             index,mission = self.menu_select(drawn_missions)
-            game_state.missions[self].append(mission)
+            game.missions[self].append(mission)
             drawn_missions.pop(index)
 
-    def play_card(self,game_state):
+    def play_card(self,game):
         # select admissible cards
-        admissible_cards = game_state.admissible_cards(self)
+        admissible_cards = game.admissible_cards(self)
         _,card_to_play = self.menu_select(admissible_cards)
-        game_state.play_card(self,card_to_play)
-
+        game.play_card(self,card_to_play)
 
 class Bot(models.Bot):
     
-    def play_setup_actions(self,game_state,drawn_missions):
+    def play_setup_actions(self,game,drawn_missions):
         if self.setup_actions:
             action = random.choice(self.setup_actions)
-            action(game_state,drawn_missions)
+            action(game,drawn_missions)
 
     def register_setup_actions(self):
         # define a list of functions that take the game as input
@@ -245,14 +186,14 @@ class Bot(models.Bot):
     def register_regular_actions(self):
         self.regular_actions = [self.play_card]
     
-    def select_mission(self,game_state,drawn_missions):
-        if drawn_missions:
+    def select_mission(self,game):
+        if game.drawn_missions:
             # select the first card
-            game_state.missions[self].append(drawn_missions[0])
-            drawn_missions.pop(0)
+            game.missions[self].append(game.drawn_missions[0])
+            game.drawn_missions.pop(0)
 
-    def play_card(self,game_state):
+    def play_card(self,game):
         # select admissible cards
-        admissible_cards = game_state.admissible_cards(self)
+        admissible_cards = game.admissible_cards(self)
         card_to_play = random.choice(admissible_cards)
-        game_state.play_card(self,card_to_play)
+        game.play_card(self,card_to_play)
