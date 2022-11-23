@@ -3,25 +3,11 @@ import random
 import json
 from cards import *
 
-class Mission:
-# collections of tasks 
-    def __init__(self):
-        self.mission_cards = []
-        self.resolved_tasks = []
-
-    def completed(self):
-        pass
-    # if all tasks are completed, check that the order is valid
-
-    def __repr__(self):
-        pass
-    # show 
-
 class TaskCard:
     def __init__(self, color, number):
         self.color = color
         self.number = number
-        self.modifier = []
+        self.modifier = None
 
     def __repr__(self):
         return 'TaskCard {} {} mod {}'.format(self.number, self.color, self.modifier)
@@ -53,13 +39,10 @@ class TheCrew(models.Game):
         self.mission_description = self.mission_list[mission_number][2]
         self.drawn_tasks = []
         self.resolved_tasks = []
+        self.win = False
         
         print(self.mission_description)
         super().__init__(players)
-
-    def admissible_task_order(self):
-    # using modifiers to return list of possible task completion order 
-        pass
 
     def end_round(self):
         # check if a task was fullfilled
@@ -148,6 +131,38 @@ class TheCrew(models.Game):
         print(self)
 
     def game_over(self): 
+
+        # rules for modifier order
+        for (idx,task) in enumerate(self.resolved_tasks):
+            if task.modifier == "1" and idx != 0:
+                return True
+            elif task.modifier == "2" and idx != 1:
+                return True
+            elif task.modifier == "3" and idx != 2:
+                return True
+            elif task.modifier == "4" and idx != 3:
+                return True
+            elif task.modifier == "5" and idx != 4:
+                return True
+            elif task.modifier == "Ω" and idx != self.num_tasks-1:
+                return True
+            elif task.modifier == ">":
+                if (">>" or  ">>>" or ">>>>") in self.resolved_tasks[:idx]:
+                    return True
+            elif task.modifier == ">>":
+                if not ">" in self.resolved_tasks[:idx]:
+                    return True
+                elif (">>>" or ">>>>") in self.resolved_tasks[:idx]:
+                    return True
+            elif task.modifier == ">>>":
+                if not (">" and ">>") in self.resolved_tasks[:idx]:
+                    return True
+                elif ">>>>" in self.resolved_tasks[:idx]:
+                    return True
+            elif task.modifier == ">>>>":
+                if not (">" and ">>" and ">>>") in self.resolved_tasks[:idx]:
+                    return True
+
         empty_hands = True
         tasks_done = True
         for p in self.players:
@@ -156,11 +171,11 @@ class TheCrew(models.Game):
             if self.hand_tasks[p]:
                 tasks_done = False
 
-        #TODO check the modifiers in resolved_tasks are in the right order
         if tasks_done:
-            print("you won!")
+            self.win = True
+            return True
         
-        return empty_hands or tasks_done
+        return empty_hands
 
     def play(self):
         print('Let\'s play!')
@@ -177,6 +192,12 @@ class TheCrew(models.Game):
 
         # end game
         self.end_game()
+
+    def end_game(self):
+        if self.win:
+            print("Congratulations, mission complete!")
+        else:
+            print("You lost!")
 
     def __repr__(self):
         reprstr = ''
