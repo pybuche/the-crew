@@ -43,5 +43,5 @@ players = [
     Bot("Marie")
 ]
 
-Game = TheCrew(players,4)
+Game = TheCrew(players,0)
 Game.play()
