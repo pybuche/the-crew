@@ -24,3 +24,24 @@ players = [
 
 Game = TheCrew(players)
 Game.play()
+
+# 3 bots
+players = [
+    Bot("Lucas"),
+    Bot("Pierrick"),
+    Bot("Fabiana")
+]
+
+Game = TheCrew(players)
+Game.play()
+
+# 4 bots
+players = [
+    Bot("Lucas"),
+    Bot("Pierrick"),
+    Bot("Fabiana"),
+    Bot("Marie")
+]
+
+Game = TheCrew(players,4)
+Game.play()
