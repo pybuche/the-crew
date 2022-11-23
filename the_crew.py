@@ -47,6 +47,7 @@ class TheCrew(models.Game):
         self.win = False
 
         if self.mission_number == 4:
+            # additional state variables
             self.player_state = {}
             self.is_sick = None
         
@@ -143,10 +144,12 @@ class TheCrew(models.Game):
         print(self)
 
     def failed_mission(self):
-        #TODO implement special mission rules here 
+
         if self.mission_number == 4:
-            pass
-        
+            if self.discard:
+                if self.discard[-1].leader() == self.is_sick:
+                    return True
+
         # normal mission rules 
         for (idx,task) in enumerate(self.resolved_tasks):
             if task.modifier == "1" and idx != 0:
