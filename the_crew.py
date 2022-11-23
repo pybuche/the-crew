@@ -1,5 +1,6 @@
 import models 
 import random
+import json
 from cards import *
 
 class Mission:
@@ -20,9 +21,11 @@ class Communication:
         return '{},{}'.format(str(self.card), self.token)
 
 class TheCrew(models.Game):
-    def __init__(self,players):
+    def __init__(self, players, mission_number = 0):
 
         # describe the game state
+        with open('the_crew_missions.json','r') as fp:
+            self.mission_list = json.load(fp)
         self.drawn_missions = []
         self.hand_cards = {p:[] for p in players}
         self.hand_missions = {p:[] for p in players}
@@ -31,6 +34,7 @@ class TheCrew(models.Game):
         self.resolved_missions = []
         self.discard = []
         self.fold = Fold()
+        self.mission_number = mission_number
 
         super().__init__(players)
 
@@ -165,12 +169,12 @@ class Round(models.Round):
 class Human(models.Human):
     def register_setup_actions(self):
         # define a list of functions that take the game as input
-        self.setup_actions = [self.select_mission]
+        self.setup_actions = [self.select_mission_card]
 
     def register_round_regular_actions(self):
         self.round_regular_actions = [self.play_card]
 
-    def select_mission(self, game):
+    def select_mission_card(self, game):
         if game.drawn_missions:
             index,mission = self.menu_select(game.drawn_missions)
             game.hand_missions[self].append(mission)
@@ -186,12 +190,12 @@ class Bot(models.RandomBot):
 
     def register_setup_actions(self):
         # define a list of functions that take the game as input
-        self.setup_actions = [self.select_mission]
+        self.setup_actions = [self.select_mission_card]
 
     def register_round_regular_actions(self):
         self.round_regular_actions = [self.play_card]
     
-    def select_mission(self,game):
+    def select_mission_card(self,game):
         if game.drawn_missions:
             # select the first card
             game.hand_missions[self].append(game.drawn_missions[0])
