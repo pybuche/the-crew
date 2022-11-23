@@ -4,29 +4,27 @@ import json
 from cards import *
 
 class Mission:
-    def __init__(self,mission_number):
-        self.mission_deck = []
+# collections of tasks 
+    def __init__(self):
         self.mission_cards = []
-        self.mission_number = mission_number
-        self.resolved_missions = []
-        self.drawn_missions = []
-        with open('the_crew_missions.json','r') as fp:
-            self.mission_list = json.load(fp)
+        self.resolved_tasks = []
 
     def completed(self):
-    # if all missions are completed, check that the order is valid
+        pass
+    # if all tasks are completed, check that the order is valid
 
     def __repr__(self):
+        pass
     # show 
 
-class Task:
+class TaskCard:
     def __init__(self, color, number):
         self.color = color
         self.number = number
         self.modifier = []
 
     def __repr__(self):
-        return 'Task {} {} mod {}'.format(self.number, self.color, self.modifier)
+        return 'TaskCard {} {} mod {}'.format(self.number, self.color, self.modifier)
 
 class Communication:
     def __init__(self,card,token):
@@ -39,27 +37,33 @@ class Communication:
 class TheCrew(models.Game):
     def __init__(self, players, mission_number = 0):
 
-        # describe the game state
-        with open('the_crew_missions.json','r') as fp:
-            self.mission_list = json.load(fp)
-        self.drawn_missions = []
         self.hand_cards = {p:[] for p in players}
-        self.hand_missions = {p:[] for p in players}
+        self.hand_tasks = {p:[] for p in players}
         self.communication = {p:[] for p in players}
         self.has_communicated = {p:False for p in players}
-        self.resolved_missions = []
         self.discard = []
         self.fold = Fold()
-        self.mission_number = mission_number
 
+        # tasks
+        self.mission_number = mission_number
+        with open('the_crew_missions.json','r') as fp:
+            self.mission_list = json.load(fp)
+        self.num_tasks = self.mission_list[mission_number][0]
+        self.modifiers = self.mission_list[mission_number][1]
+        self.mission_description = self.mission_list[mission_number][2]
+        self.drawn_tasks = []
+        self.resolved_tasks = []
+        
+        print(self.mission_description)
         super().__init__(players)
 
-    def admissible_mission_order(self):
-    # using modifiers to return list of possible mission completion order 
+    def admissible_task_order(self):
+    # using modifiers to return list of possible task completion order 
+        pass
 
     def end_round(self):
-        # check if mission was fullfilled
-        self.mission_complete()
+        # check if a task was fullfilled
+        self.task_complete()
         # promote winner to captain
         self.promote_to_captain(self.fold.leader())
         # discard fold
@@ -67,16 +71,16 @@ class TheCrew(models.Game):
         # new empty fold
         self.fold = Fold()
 
-    def mission_complete(self):
-        # check if a mission was done in the fold
+    def task_complete(self):
+        # check if a task was done in the fold
         for player,card in self.fold.content:
             if player == self.fold.leader():
-                for mission in self.hand_missions[player]:
-                    if mission.color == card.color and mission.number == card.number:
-                        # pop mission if complete
-                        print(str(player) + ' completed mission ' + str(mission))
-                        self.hand_missions[player].remove(mission)
-                        self.resolved_missions.append(mission)
+                for task in self.hand_tasks[player]:
+                    if task.color == card.color and task.number == card.number:
+                        # pop task if complete
+                        print(str(player) + ' completed task ' + str(task))
+                        self.hand_tasks[player].remove(task)
+                        self.resolved_tasks.append(task)
                         break
 
     def admissible_cards(self,player):
@@ -131,29 +135,32 @@ class TheCrew(models.Game):
         # The captain starts the first round : reorder players
         self.promote_to_captain(captain)
 
-        # Draw a mission
-        mission_deck = [Task(color, number) for color in CARD_COLORS for number in range(1, 10)]
-        random.shuffle(mission_deck)
+        # Draw tasks
+        task_deck = [TaskCard(color, number) for color in CARD_COLORS for number in range(1, 10)]
+        random.shuffle(task_deck)
 
-        #TODO implement mission array
-        self.drawn_missions = [mission_deck.pop(0), mission_deck.pop(0)]
+        for idx in range(self.num_tasks):
+            task = task_deck.pop(0)
+            if self.modifiers:
+                task.modifier = self.modifiers[idx]
+            self.drawn_tasks.append(task)
 
         print(self)
 
     def game_over(self): 
         empty_hands = True
-        missions_done = True
+        tasks_done = True
         for p in self.players:
             if self.hand_cards[p]:
                 empty_hands = False
-            if self.hand_missions[p]:
-                missions_done = False
+            if self.hand_tasks[p]:
+                tasks_done = False
 
-        #TODO check the modifiers in resolved_missions are in the right order
-        if missions_done:
+        #TODO check the modifiers in resolved_tasks are in the right order
+        if tasks_done:
             print("you won!")
         
-        return empty_hands or missions_done
+        return empty_hands or tasks_done
 
     def play(self):
         print('Let\'s play!')
@@ -176,8 +183,9 @@ class TheCrew(models.Game):
         for p in self.players:
             reprstr = reprstr + str(p) \
                 + '\n\tHand: ' + ','.join([str(card) for card in self.hand_cards[p]]) \
-                + '\n\tMissions: ' + ','.join([str(card) for card in self.hand_missions[p]]) \
+                + '\n\tTasks: ' + ','.join([str(card) for card in self.hand_tasks[p]]) \
                 + '\n'  
+        reprstr = reprstr + ','.join([str(task) for task in self.drawn_tasks])
         return reprstr
 
 class Round(models.Round):
@@ -188,16 +196,16 @@ class Round(models.Round):
 class Human(models.Human):
     def register_setup_actions(self):
         # define a list of functions that take the game as input
-        self.setup_actions = [self.select_mission_card]
+        self.setup_actions = [self.select_task_card]
 
     def register_round_regular_actions(self):
         self.round_regular_actions = [self.play_card]
 
-    def select_mission_card(self, game):
-        if game.drawn_missions:
-            index,mission = self.menu_select(game.drawn_missions)
-            game.hand_missions[self].append(mission)
-            game.drawn_missions.pop(index)
+    def select_task_card(self, game):
+        if game.drawn_tasks:
+            index,mission = self.menu_select(game.drawn_tasks)
+            game.hand_tasks[self].append(mission)
+            game.drawn_tasks.pop(index)
 
     def play_card(self,game):
         # select admissible cards
@@ -209,16 +217,16 @@ class Bot(models.RandomBot):
 
     def register_setup_actions(self):
         # define a list of functions that take the game as input
-        self.setup_actions = [self.select_mission_card]
+        self.setup_actions = [self.select_task_card]
 
     def register_round_regular_actions(self):
         self.round_regular_actions = [self.play_card]
     
-    def select_mission_card(self,game):
-        if game.drawn_missions:
+    def select_task_card(self,game):
+        if game.drawn_tasks:
             # select the first card
-            game.hand_missions[self].append(game.drawn_missions[0])
-            game.drawn_missions.pop(0)
+            game.hand_tasks[self].append(game.drawn_tasks[0])
+            game.drawn_tasks.pop(0)
 
     def play_card(self,game):
         # select admissible cards
