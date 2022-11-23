@@ -37,6 +37,7 @@ class TheCrew(models.Game):
         self.num_tasks = self.mission_list[mission_number][0]
         self.modifiers = self.mission_list[mission_number][1]
         self.mission_description = self.mission_list[mission_number][2]
+        self.special_mission = []; # TODO populate this
         self.drawn_tasks = []
         self.resolved_tasks = []
         self.win = False
@@ -130,38 +131,50 @@ class TheCrew(models.Game):
 
         print(self)
 
+    def failed_mission(self):
+
+        if self.mission_number in special_mission:
+            # implement special mission rules here 
+        else:
+            # normal mission rules 
+            for (idx,task) in enumerate(self.resolved_tasks):
+                if task.modifier == "1" and idx != 0:
+                    return True
+                elif task.modifier == "2" and idx != 1:
+                    return True
+                elif task.modifier == "3" and idx != 2:
+                    return True
+                elif task.modifier == "4" and idx != 3:
+                    return True
+                elif task.modifier == "5" and idx != 4:
+                    return True
+                elif task.modifier == "Ω" and idx != self.num_tasks-1:
+                    return True
+
+                elif task.modifier == ">":
+                    if (">>" or  ">>>" or ">>>>") in self.resolved_tasks[:idx]:
+                        return True
+                elif task.modifier == ">>":
+                    if not ">" in self.resolved_tasks[:idx]:
+                        return True
+                    elif (">>>" or ">>>>") in self.resolved_tasks[:idx]:
+                        return True
+                elif task.modifier == ">>>":
+                    if not (">" and ">>") in self.resolved_tasks[:idx]:
+                        return True
+                    elif ">>>>" in self.resolved_tasks[:idx]:
+                        return True
+                elif task.modifier == ">>>>":
+                    if not (">" and ">>" and ">>>") in self.resolved_tasks[:idx]:
+                        return True
+
+            return False
+
     def game_over(self): 
 
-        # rules for modifier order
-        for (idx,task) in enumerate(self.resolved_tasks):
-            if task.modifier == "1" and idx != 0:
-                return True
-            elif task.modifier == "2" and idx != 1:
-                return True
-            elif task.modifier == "3" and idx != 2:
-                return True
-            elif task.modifier == "4" and idx != 3:
-                return True
-            elif task.modifier == "5" and idx != 4:
-                return True
-            elif task.modifier == "Ω" and idx != self.num_tasks-1:
-                return True
-            elif task.modifier == ">":
-                if (">>" or  ">>>" or ">>>>") in self.resolved_tasks[:idx]:
-                    return True
-            elif task.modifier == ">>":
-                if not ">" in self.resolved_tasks[:idx]:
-                    return True
-                elif (">>>" or ">>>>") in self.resolved_tasks[:idx]:
-                    return True
-            elif task.modifier == ">>>":
-                if not (">" and ">>") in self.resolved_tasks[:idx]:
-                    return True
-                elif ">>>>" in self.resolved_tasks[:idx]:
-                    return True
-            elif task.modifier == ">>>>":
-                if not (">" and ">>" and ">>>") in self.resolved_tasks[:idx]:
-                    return True
+        #TODO implement his for special missions
+        if self.failed_mission():
+            return True
 
         empty_hands = True
         tasks_done = True

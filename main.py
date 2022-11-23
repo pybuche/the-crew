@@ -9,7 +9,8 @@ players = [
     Human("Martin")
 ]
 
-Game = TheCrew(players)
+mission_number = 2
+Game = TheCrew(players,mission_number)
 Game.play()
 
 # with bots only
