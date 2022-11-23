@@ -19,14 +19,14 @@ class Mission:
     def __repr__(self):
     # show 
 
-class MissionCard:
+class Task:
     def __init__(self, color, number):
         self.color = color
         self.number = number
         self.modifier = []
 
     def __repr__(self):
-        return 'MissionCard {} {} mod {}'.format(self.number, self.color, self.modifier)
+        return 'Task {} {} mod {}'.format(self.number, self.color, self.modifier)
 
 class Communication:
     def __init__(self,card,token):
@@ -132,7 +132,7 @@ class TheCrew(models.Game):
         self.promote_to_captain(captain)
 
         # Draw a mission
-        mission_deck = [MissionCard(color, number) for color in CARD_COLORS for number in range(1, 10)]
+        mission_deck = [Task(color, number) for color in CARD_COLORS for number in range(1, 10)]
         random.shuffle(mission_deck)
 
         #TODO implement mission array
