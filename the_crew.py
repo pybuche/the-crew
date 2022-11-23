@@ -133,7 +133,7 @@ class TheCrew(models.Game):
 
     def failed_mission(self):
 
-        if self.mission_number in special_mission:
+        if self.mission_number in self.special_mission:
             # implement special mission rules here 
         else:
             # normal mission rules 
@@ -167,7 +167,6 @@ class TheCrew(models.Game):
                 elif task.modifier == ">>>>":
                     if not (">" and ">>" and ">>>") in self.resolved_tasks[:idx]:
                         return True
-
             return False
 
     def game_over(self): 
