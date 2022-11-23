@@ -4,13 +4,29 @@ import json
 from cards import *
 
 class Mission:
+    def __init__(self,mission_number):
+        self.mission_deck = []
+        self.mission_cards = []
+        self.mission_number = mission_number
+        self.resolved_missions = []
+        self.drawn_missions = []
+        with open('the_crew_missions.json','r') as fp:
+            self.mission_list = json.load(fp)
+
+    def completed(self):
+    # if all missions are completed, check that the order is valid
+
+    def __repr__(self):
+    # show 
+
+class MissionCard:
     def __init__(self, color, number):
         self.color = color
         self.number = number
         self.modifier = []
 
     def __repr__(self):
-        return 'Mission {} {} mod {}'.format(self.number, self.color, self.modifier)
+        return 'MissionCard {} {} mod {}'.format(self.number, self.color, self.modifier)
 
 class Communication:
     def __init__(self,card,token):
@@ -37,6 +53,9 @@ class TheCrew(models.Game):
         self.mission_number = mission_number
 
         super().__init__(players)
+
+    def admissible_mission_order(self):
+    # using modifiers to return list of possible mission completion order 
 
     def end_round(self):
         # check if mission was fullfilled
@@ -113,7 +132,7 @@ class TheCrew(models.Game):
         self.promote_to_captain(captain)
 
         # Draw a mission
-        mission_deck = [Mission(color, number) for color in CARD_COLORS for number in range(1, 10)]
+        mission_deck = [MissionCard(color, number) for color in CARD_COLORS for number in range(1, 10)]
         random.shuffle(mission_deck)
 
         #TODO implement mission array

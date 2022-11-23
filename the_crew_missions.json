@@ -1,7 +1,5 @@
 [
-    [1,[]],
-    [2,[]],
-    [2,[1,2]],
-    [3,[]],
-    [0,[-1]]
+    [1,[],"Félicitations ! Vous avez été sélectionnés parmi un large\npanel de volontaires pour participer à la plus grande, la\nplus excitante et la plus dangereuse aventure qu'ait connue\nl'humanité : la quête de la neuvième planète ! À peine êtes-\nvous arrivés au centre d'entraînement qu'on vous propose\nde tester votre esprit d'équipe."],
+    [2,[],"Il s'avère rapidement que vous êtes en parfaite adéquation\nles uns avec les autres. Votre compatibilité mentale, que\nl'on pourrait même qualifier de fusion mentale, augure\ndu meilleur pour la réussite de la mission. Il est désormais\ntemps de passer aux phases d'entraînement deux et trois :\nl'apesanteur et la technologie de contrôle."],
+    [2,[1,2],"Chaque phase d'entraînement vous demande de mobiliser\nles compétences acquises lors des phases précédentes. La\ngestion de l'alimentation électrique et la priorisation des\nurgences nécessitent un haut degré de raisonnement logique\nafin d'appréhender les systèmes dans leur ensemble. C'est ici\nque vos facultés en mathématiques se révéleront utiles."]
 ]
