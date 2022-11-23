@@ -47,7 +47,8 @@ class Fold:
         self.content = []
 
     def __repr__(self):
-        return ','.join([str(p) + ': ' + str(card) + '\n' for p,card in self.content])
+        reprstr = "Fold:\n" + ','.join([str(p) + ': ' + str(card) + '\n' for p,card in self.content]) + '\n'
+        return reprstr
 
     def isempty(self):
         if self.content:
