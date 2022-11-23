@@ -3,6 +3,11 @@ import random
 import json
 from cards import *
 
+# TODO: on top of task card modifiers, there are mission
+# modifiers (no communicatiopn, ...)
+# There are also modifiers that affect only one player
+
+
 class TaskCard:
     def __init__(self, color, number):
         self.color = color
@@ -37,10 +42,13 @@ class TheCrew(models.Game):
         self.num_tasks = self.mission_list[mission_number][0]
         self.modifiers = self.mission_list[mission_number][1]
         self.mission_description = self.mission_list[mission_number][2]
-        self.special_mission = []; # TODO populate this
         self.drawn_tasks = []
         self.resolved_tasks = []
         self.win = False
+
+        if self.mission_number == 4:
+            self.player_state = {}
+            self.is_sick = None
         
         print(self.mission_description)
         super().__init__(players)
@@ -56,16 +64,19 @@ class TheCrew(models.Game):
         self.fold = Fold()
 
     def task_complete(self):
-        # check if a task was done in the fold
+        # check if a task or more was done in the fold
         for player,card in self.fold.content:
             if player == self.fold.leader():
                 for task in self.hand_tasks[player]:
                     if task.color == card.color and task.number == card.number:
-                        # pop task if complete
                         print(str(player) + ' completed task ' + str(task))
                         self.hand_tasks[player].remove(task)
                         self.resolved_tasks.append(task)
-                        break
+                        # TODO: the rule states that if two tasks are done in 
+                        # the same fold and they have modifiers (like 1 and 2)
+                        # they are considered solved in the right order no 
+                        # matter the order of those cards in the fold
+                        
 
     def admissible_cards(self,player):
         if self.fold.isempty():
@@ -108,13 +119,13 @@ class TheCrew(models.Game):
         random.shuffle(deck)
 
         # deal cards to players
-        while len(deck) > 0:
-            # works only if the number of cards is a multiple of the number of players
+        while deck:
             for player in self.players: 
-                card = deck.pop()
-                if card.color == 'black' and card.number == 4:
-                    captain = player
-                self.hand_cards[player].append(card)
+                if deck:
+                    card = deck.pop()
+                    if card.color == 'black' and card.number == 4:
+                        captain = player
+                    self.hand_cards[player].append(card)
    
         # The captain starts the first round : reorder players
         self.promote_to_captain(captain)
@@ -125,68 +136,67 @@ class TheCrew(models.Game):
 
         for idx in range(self.num_tasks):
             task = task_deck.pop(0)
-            if self.modifiers:
+            if idx < len(self.modifiers):
                 task.modifier = self.modifiers[idx]
             self.drawn_tasks.append(task)
 
         print(self)
 
     def failed_mission(self):
-
-        if self.mission_number in self.special_mission:
-            # implement special mission rules here 
+        #TODO implement special mission rules here 
+        if self.mission_number == 4:
             pass
-        else:
-            # normal mission rules 
-            for (idx,task) in enumerate(self.resolved_tasks):
-                if task.modifier == "1" and idx != 0:
-                    return True
-                elif task.modifier == "2" and idx != 1:
-                    return True
-                elif task.modifier == "3" and idx != 2:
-                    return True
-                elif task.modifier == "4" and idx != 3:
-                    return True
-                elif task.modifier == "5" and idx != 4:
-                    return True
-                elif task.modifier == "Ω" and idx != self.num_tasks-1:
-                    return True
+        
+        # normal mission rules 
+        for (idx,task) in enumerate(self.resolved_tasks):
+            if task.modifier == "1" and idx != 0:
+                return True
+            elif task.modifier == "2" and idx != 1:
+                return True
+            elif task.modifier == "3" and idx != 2:
+                return True
+            elif task.modifier == "4" and idx != 3:
+                return True
+            elif task.modifier == "5" and idx != 4:
+                return True
+            elif task.modifier == "Ω" and idx != self.num_tasks-1:
+                return True
 
-                elif task.modifier == ">":
-                    if (">>" or  ">>>" or ">>>>") in self.resolved_tasks[:idx]:
-                        return True
-                elif task.modifier == ">>":
-                    if not ">" in self.resolved_tasks[:idx]:
-                        return True
-                    elif (">>>" or ">>>>") in self.resolved_tasks[:idx]:
-                        return True
-                elif task.modifier == ">>>":
-                    if not (">" and ">>") in self.resolved_tasks[:idx]:
-                        return True
-                    elif ">>>>" in self.resolved_tasks[:idx]:
-                        return True
-                elif task.modifier == ">>>>":
-                    if not (">" and ">>" and ">>>") in self.resolved_tasks[:idx]:
-                        return True
-            return False
+            elif task.modifier == ">":
+                if (">>" or  ">>>" or ">>>>") in self.resolved_tasks[:idx]:
+                    return True
+            elif task.modifier == ">>":
+                if not ">" in self.resolved_tasks[:idx]:
+                    return True
+                elif (">>>" or ">>>>") in self.resolved_tasks[:idx]:
+                    return True
+            elif task.modifier == ">>>":
+                if not (">" and ">>") in self.resolved_tasks[:idx]:
+                    return True
+                elif ">>>>" in self.resolved_tasks[:idx]:
+                    return True
+            elif task.modifier == ">>>>":
+                if not (">" and ">>" and ">>>") in self.resolved_tasks[:idx]:
+                    return True
+        return False
 
     def game_over(self): 
 
-        #TODO implement his for special missions
         if self.failed_mission():
             return True
 
-        empty_hands = True
+        empty_hands = False
         tasks_done = True
         for p in self.players:
-            if self.hand_cards[p]:
-                empty_hands = False
+            if not self.hand_cards[p]:
+                empty_hands = True
             if self.hand_tasks[p]:
                 tasks_done = False
 
-        if tasks_done:
-            self.win = True
-            return True
+        if not self.mission_number == 4: 
+            if tasks_done:
+                self.win = True
+                return True
         
         return empty_hands
 
@@ -194,8 +204,15 @@ class TheCrew(models.Game):
         print('Let\'s play!')
         
         # play setup actions
-        for p in self.players:
-            p.play_setup_actions(self)
+        if self.mission_number == 4:    
+            # the crewmates play first
+            for p in self.players[1:]:
+                p.play_setup_actions(self)
+            # then the captain
+            self.players[0].play_setup_actions(self)
+        else:
+            for p in self.players:
+                p.play_setup_actions(self)
 
         # play the game
         while not self.game_over():
@@ -230,16 +247,27 @@ class Round(models.Round):
 class Human(models.Human):
     def register_setup_actions(self):
         # define a list of functions that take the game as input
-        self.setup_actions = [self.select_task_card]
+        self.setup_actions = [self.do_setup]
 
     def register_round_regular_actions(self):
         self.round_regular_actions = [self.play_card]
 
-    def select_task_card(self, game):
+    def do_setup(self, game):
         if game.drawn_tasks:
             index,mission = self.menu_select(game.drawn_tasks)
             game.hand_tasks[self].append(mission)
             game.drawn_tasks.pop(index)
+        if game.mission_number == 4:
+            self.special_mission_4(game)
+        
+    def special_mission_4(self, game):
+        if self == game.players[0]: # captain
+            for p in game.players[1:]:
+                _,game.is_sick = self.menu_select(game.players[1:])
+                print("{} is sick".format(game.is_sick))
+        else: # crewmates
+            _,game.player_state[self] = self.menu_select(["good","bad"])
+            print("{} is feeling ".format(self) + game.player_state[self])
 
     def play_card(self,game):
         # select admissible cards
@@ -251,16 +279,26 @@ class Bot(models.RandomBot):
 
     def register_setup_actions(self):
         # define a list of functions that take the game as input
-        self.setup_actions = [self.select_task_card]
+        self.setup_actions = [self.do_setup]
 
     def register_round_regular_actions(self):
         self.round_regular_actions = [self.play_card]
     
-    def select_task_card(self,game):
+    def special_mission_4(self, game):
+        if self == game.players[0]: # captain
+            game.is_sick = random.choice(game.players[1:])
+            print("{} is sick".format(game.is_sick))
+        else: # crewmates
+            game.player_state[self] = random.choice(["good","bad"])
+            print("{} is feeling ".format(self) + game.player_state[self])
+
+    def do_setup(self,game):
         if game.drawn_tasks:
             # select the first card
             game.hand_tasks[self].append(game.drawn_tasks[0])
             game.drawn_tasks.pop(0)
+        if game.mission_number == 4:
+            self.special_mission_4(game)
 
     def play_card(self,game):
         # select admissible cards
