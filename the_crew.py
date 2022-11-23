@@ -135,6 +135,7 @@ class TheCrew(models.Game):
 
         if self.mission_number in self.special_mission:
             # implement special mission rules here 
+            pass
         else:
             # normal mission rules 
             for (idx,task) in enumerate(self.resolved_tasks):
