@@ -17,7 +17,6 @@ class GameMenu:
     def exit(self):
     # quit menu
 
-
 class Game:
     def __init__(self,players):
         self.players = players
