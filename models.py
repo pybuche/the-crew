@@ -1,5 +1,18 @@
 import random
 
+class GameMenu:
+# handle creation of player, web server, selecting game options
+    def __init__(self):
+        self.players = []
+        self.Game = None
+    
+    def server(self):
+    # allow players to connect
+
+    def client(self):
+    # connect to a server
+
+
 class Game:
     def __init__(self,players):
         self.players = players
