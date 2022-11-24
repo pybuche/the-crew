@@ -1,5 +1,7 @@
 import random
 
+#TODO transform print and input statement in the game to socket read and writes
+
 class GameMenu:
 # handle creation of player, web server, selecting game options
     def __init__(self):
@@ -11,6 +13,9 @@ class GameMenu:
 
     def client(self):
     # connect to a server
+
+    def exit(self):
+    # quit menu
 
 
 class Game:
