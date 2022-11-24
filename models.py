@@ -8,6 +8,12 @@ class GameMenu:
         self.players = []
         self.Game = None
     
+    def add_player(self):
+    # add a player
+
+    def start(self):
+    # start game
+
     def server(self):
     # allow players to connect
 

@@ -1,15 +1,17 @@
 import socketserver
 import socket
+import threading
 
 class TCPHandler(socketserver.BaseRequestHandler):
     def handle(self):
-        # self.request is the TCP socket connected to the client
+
+        self.request.sendall("input")
+
         self.data = self.request.recv(1024).strip()
         print("{} wrote:".format(self.client_address[0]))
         print(self.data)
 
-        # just send back the same data, but upper-cased
-        self.request.sendall(self.data.upper())
+        self.request.sendall("game_over")
 
 class Server:
     def __init__(self,port):
@@ -29,12 +31,17 @@ class Client:
 
         # Create a socket (SOCK_STREAM means a TCP socket)
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
-            # Connect to server and send data
+            # Connect to server 
             sock.connect((host, port))
-            sock.sendall(bytes(data + "\n", "utf-8"))
+            # loop until the server sends a termination signal
+            while True:
+                # read until you are asked to respond
+                received = str(sock.recv(1024), "utf-8")
+                if received == "game_over":
+                    break
+                if received == "input": 
+                    sock.sendall(bytes(data + "\n", "utf-8"))
+                    received = ""
 
-            # Receive data from the server and shut down
-            received = str(sock.recv(1024), "utf-8")
-
-        print("Sent:     {}".format(data))
-        print("Received: {}".format(received))
+                print("Received: {}".format(received))
+                print("Sent:     {}".format(data))
