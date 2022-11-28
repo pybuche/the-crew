@@ -1,47 +1,109 @@
-import socketserver
 import socket
+import pickle
+import models
 import threading
 
-class TCPHandler(socketserver.BaseRequestHandler):
-    def handle(self):
-
-        self.request.sendall("input")
-
-        self.data = self.request.recv(1024).strip()
-        print("{} wrote:".format(self.client_address[0]))
-        print(self.data)
-
-        self.request.sendall("game_over")
-
-class Server:
-    def __init__(self,port):
+class PlayerServer(models.Player):
+    def __init__(self,name,port,debug=False):
         self.host = "localhost"
         self.port = port
-        with socketserver.TCPServer((self.host, port), TCPHandler) as server:
-            #TODO interrupt when you exit the game using server.
-            # shutdown() in another thread
-            server.serve_forever()
+        self.debug = debug
 
-class Client:
-    def __init__(self,host,port):
+        self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.socket.bind((self.host,self.port))
+        self.socket.listen(1)
+        self.conn, self.addr = self.socket.accept()
+        if self.debug:
+            print('Connected by {}'.format(self.addr))
+        
+        #TODO receive player name form network instead of param
+
+        super().__init__(name)
+
+    def send_to_client(self,action,game):
+        # send action and game state
+        print(action)
+        print(game)
+        data = pickle.dumps((action,game))
+        self.conn.sendall(data)
+
+        # receive modified game 
+        data = []
+        while True:
+            packet = self.conn.recv(4096)
+            if not packet: break
+            data.append(packet)
+        data_complete = b"".join(data)
+        game_modified = pickle.loads(data_complete)
+
+        # TODO verify that modifications are legal
+        game = game_modified
+        
+    def play_setup_actions(self,game):
+        self.send_to_client('play_setup_actions',game)
+
+    def play_round_start_actions(self,game):
+        self.send_to_client('play_round_start_actions',game)
+        
+    def play_round_regular_actions(self,game):
+        self.send_to_client('play_round_regular_actions',game)
+
+    def play_round_interrupt_actions(self,game):
+        self.send_to_client('play_round_interrupt_actions',game)
+
+    def play_round_end_actions(self,game):
+        self.send_to_client('play_round_end_actions',game)
+    
+    def play_end_actions(self,game):
+        self.send_to_client('play_end_actions',game)
+
+    def __del__(self):
+        self.conn.sendall(b'EOG') # be polite and warn the client
+        self.conn.close()
+
+    def __repr__(self):
+        return "PlayerServer_{}".format(self.name)
+
+class PlayerClient:
+    def __init__(self,host,port,player,debug=False):
         self.host = host
         self.port = port
+        self.player = player
+        self.still_connected = True
+        self.debug = debug
+        self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.socket.connect((self.host,self.port))
 
-        data = "blabla"
+        #TODO send player name
 
-        # Create a socket (SOCK_STREAM means a TCP socket)
-        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
-            # Connect to server 
-            sock.connect((host, port))
-            # loop until the server sends a termination signal
-            while True:
-                # read until you are asked to respond
-                received = str(sock.recv(1024), "utf-8")
-                if received == "game_over":
-                    break
-                if received == "input": 
-                    sock.sendall(bytes(data + "\n", "utf-8"))
-                    received = ""
+        while self.still_connected: 
+            self.do_action_on_server_request()
 
-                print("Received: {}".format(received))
-                print("Sent:     {}".format(data))
+    def do_action_on_server_request(self):
+        # receive game state and action to perform
+        data = []
+        while True:
+            packet = self.socket.recv(4096)
+            if not packet: break
+            data.append(packet)
+        data_complete = b"".join(data)
+
+        if data_complete == b'':
+            return
+
+        if self.debug:
+            print(data_complete)
+
+        if data_complete == b'EOG':
+            # server should send End Of Game before closing
+            self.still_connected = False
+            return
+
+        (action,game) = pickle.loads(data_complete)
+        fun = getattr(self.player,action)
+
+        # do the action and modify game state
+        fun(game)
+
+        # send back modified game state
+        self.socket.sendall(pickle.dumps(game))
