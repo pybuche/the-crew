@@ -7,21 +7,30 @@ class GameMenu:
     def __init__(self):
         self.players = []
         self.Game = None
+
+    def main_menu(self):
+    # display menu
+        pass
     
     def add_player(self):
     # add a player
+        pass
+
+    def host(self):
+    # host a game, become the server
+        pass
+
+    def connect(self):
+    # connect to a server
+        pass
 
     def start(self):
     # start game
-
-    def server(self):
-    # allow players to connect
-
-    def client(self):
-    # connect to a server
+        pass
 
     def exit(self):
     # quit menu
+        pass
 
 class Game:
     def __init__(self,players):
