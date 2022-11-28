@@ -97,7 +97,7 @@ class PlayerClient:
         if data_complete == b'':
             return
 
-        if data_complete == b'EOG':
+        if data_complete == b'EOG': 
             # server should send End Of Game before closing
             self.still_connected = False
             return
