@@ -42,12 +42,13 @@ class Card:
                 return False
 
 class Fold:
-    def __init__(self):
+    def __init__(self,player_names):
         # list of (player,card) tuples
         self.content = []
+        self.player_names = player_names
 
     def __repr__(self):
-        reprstr = "Fold:\n" + ','.join([str(p) + ': ' + str(card) + '\n' for p,card in self.content]) + '\n'
+        reprstr = "Fold:\n" + ','.join([self.player_names[p] + ': ' + str(card) + '\n' for p,card in self.content]) + '\n'
         return reprstr
 
     def isempty(self):

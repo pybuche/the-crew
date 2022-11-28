@@ -33,7 +33,7 @@ class GameState:
         self.hand_cards = {p:[] for p in range(self.num_players)}
         self.hand_tasks = {p:[] for p in range(self.num_players)}
         self.discard = []
-        self.fold = Fold()
+        self.fold = Fold(self.player_names)
 
         # tasks
         self.mission_number = mission_number
@@ -281,6 +281,8 @@ class Round(models.Round):
             player = self.game.players[player_idx]
             player.play_round_end_actions(self.game.state)
 
+        print(self.game.state.fold)
+
         # check if a task was fullfilled
         self.game.state.task_complete()
         # promote winner to captain
@@ -289,7 +291,7 @@ class Round(models.Round):
         # discard fold
         self.game.state.discard.append(self.game.state.fold)
         # new empty fold
-        self.game.state.fold = Fold()
+        self.game.state.fold = Fold(self.game.state.player_names)
 
     def play(self):
         self.start_round()
@@ -341,7 +343,6 @@ class Human(models.Human):
         cards_list = game_state.admissible_cards()
         _,card_to_play = self.menu_select(cards_list)
         game_state.play_card(player_idx,card_to_play)
-        print("{} played {}".format(game_state.player_names[player_idx], card_to_play))
 
 class Bot(models.RandomBot):
 
@@ -377,7 +378,6 @@ class Bot(models.RandomBot):
         cards_list = game_state.admissible_cards()
         card_to_play = random.choice(cards_list)
         game_state.play_card(player_idx,card_to_play)
-        print("{} played {}".format(game_state.player_names[player_idx], card_to_play))
 
 class SmartBot(models.Player):
     #TODO

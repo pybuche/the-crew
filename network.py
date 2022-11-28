@@ -1,14 +1,13 @@
 import socket
 import pickle
 import models
-import threading
 
 class PlayerServer(models.Player):
     def __init__(self,name,port,debug=False):
         self.host = "localhost"
         self.port = port
         self.debug = debug
-        self.delim = b'EOT'
+        self.delim = b'EOT' #TODO this can break easily, send size of packet at the beginning instead
 
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.socket.bind((self.host,self.port))
@@ -23,8 +22,6 @@ class PlayerServer(models.Player):
 
     def send_to_client(self,action,game_state):
         # send action and game state
-        print(action)
-        print(game_state)
         data = pickle.dumps((action,game_state))
         self.conn.sendall(data + self.delim)
 
@@ -78,6 +75,7 @@ class PlayerClient:
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.socket.connect((self.host,self.port))
 
+        #TODO get initial state and display 
         #TODO send player name
 
         while self.still_connected: 
@@ -109,8 +107,6 @@ class PlayerClient:
 
         # do the action and modify game state
         fun(game_state) 
-        print(fun)
-        print(game_state)
 
         # send back modified game state
         self.socket.sendall(pickle.dumps(game_state) + self.delim)
