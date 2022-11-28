@@ -8,6 +8,7 @@ class PlayerServer(models.Player):
         self.host = "localhost"
         self.port = port
         self.debug = debug
+        self.delim = b'EOT'
 
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.socket.bind((self.host,self.port))
@@ -25,15 +26,19 @@ class PlayerServer(models.Player):
         print(action)
         print(game)
         data = pickle.dumps((action,game))
-        self.conn.sendall(data)
+        self.conn.sendall(data + self.delim)
 
         # receive modified game 
         data = []
         while True:
             packet = self.conn.recv(4096)
+            if self.debug:
+                print(packet)
             if not packet: break
             data.append(packet)
+            if self.delim in packet: break
         data_complete = b"".join(data)
+        data_complete = data_complete.split(self.delim)[0]
         game_modified = pickle.loads(data_complete)
 
         # TODO verify that modifications are legal
@@ -68,6 +73,7 @@ class PlayerClient:
     def __init__(self,host,port,player,debug=False):
         self.host = host
         self.port = port
+        self.delim = b'EOT'
         self.player = player
         self.still_connected = True
         self.debug = debug
@@ -84,15 +90,16 @@ class PlayerClient:
         data = []
         while True:
             packet = self.socket.recv(4096)
+            if self.debug:
+                print(packet)
             if not packet: break
             data.append(packet)
+            if self.delim in packet: break
         data_complete = b"".join(data)
+        data_complete = data_complete.split(self.delim)[0]
 
         if data_complete == b'':
             return
-
-        if self.debug:
-            print(data_complete)
 
         if data_complete == b'EOG':
             # server should send End Of Game before closing
@@ -100,10 +107,12 @@ class PlayerClient:
             return
 
         (action,game) = pickle.loads(data_complete)
+        print(action)
+        print(game)
         fun = getattr(self.player,action)
 
         # do the action and modify game state
         fun(game)
 
         # send back modified game state
-        self.socket.sendall(pickle.dumps(game))
+        self.socket.sendall(pickle.dumps(game) + self.delim)
