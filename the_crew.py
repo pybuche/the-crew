@@ -57,6 +57,31 @@ class GameState:
         print(self.mission_description)
         print(self)
 
+    def set_state(self, state):
+        self.num_players = state.num_players
+        self.player_order = state.player_order
+        self.player_names = state.player_names
+        self.hand_cards = state.hand_cards
+        self.hand_tasks = state.hand_tasks
+        self.discard = state.discard
+        self.fold = state.fold
+
+        # tasks
+        self.mission_number = state.mission_number
+        self.mission_list = state.mission_list
+        self.num_tasks = state.num_tasks
+        self.modifiers = state.modifiers
+        self.mission_description = state.mission_description
+        self.drawn_tasks = state.drawn_tasks
+        self.resolved_tasks = state.resolved_tasks
+        self.win = state.win
+        self.current_player_idx = state.current_player_idx
+
+        if self.mission_number == 4:
+            # additional state variables
+            self.player_state = state.player_state
+            self.is_sick = state.is_sick
+
     def setup_game(self):
         CARD_COLORS = ['green', 'yellow', 'blue', 'pink']
         TRUMP_COLOR = 'black'

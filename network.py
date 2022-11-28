@@ -21,11 +21,11 @@ class PlayerServer(models.Player):
 
         super().__init__(name)
 
-    def send_to_client(self,action,game):
+    def send_to_client(self,action,game_state):
         # send action and game state
         print(action)
-        print(game)
-        data = pickle.dumps((action,game))
+        print(game_state)
+        data = pickle.dumps((action,game_state))
         self.conn.sendall(data + self.delim)
 
         # receive modified game 
@@ -39,31 +39,29 @@ class PlayerServer(models.Player):
             if self.delim in packet: break
         data_complete = b"".join(data)
         data_complete = data_complete.split(self.delim)[0]
-        game_modified = pickle.loads(data_complete)
-
-        # TODO verify that modifications are legal
-        game = game_modified
+        game_state_modified = pickle.loads(data_complete)
+        game_state.set_state(game_state_modified)
         
-    def play_setup_actions(self,game):
-        self.send_to_client('play_setup_actions',game)
+    def play_setup_actions(self,game_state):
+        self.send_to_client('play_setup_actions',game_state)
 
-    def play_round_start_actions(self,game):
-        self.send_to_client('play_round_start_actions',game)
+    def play_round_start_actions(self,game_state):
+        self.send_to_client('play_round_start_actions',game_state)
         
-    def play_round_regular_actions(self,game):
-        self.send_to_client('play_round_regular_actions',game)
+    def play_round_regular_actions(self,game_state):
+        self.send_to_client('play_round_regular_actions',game_state)
 
-    def play_round_interrupt_actions(self,game):
-        self.send_to_client('play_round_interrupt_actions',game)
+    def play_round_interrupt_actions(self,game_state):
+        self.send_to_client('play_round_interrupt_actions',game_state)
 
-    def play_round_end_actions(self,game):
-        self.send_to_client('play_round_end_actions',game)
+    def play_round_end_actions(self,game_state):
+        self.send_to_client('play_round_end_actions',game_state)
     
-    def play_end_actions(self,game):
-        self.send_to_client('play_end_actions',game)
+    def play_end_actions(self,game_state):
+        self.send_to_client('play_end_actions',game_state)
 
     def __del__(self):
-        self.conn.sendall(b'EOG') # be polite and warn the client
+        self.conn.sendall(b'EOG' + self.delim) # be polite and warn the client
         self.conn.close()
 
     def __repr__(self):
@@ -106,13 +104,13 @@ class PlayerClient:
             self.still_connected = False
             return
 
-        (action,game) = pickle.loads(data_complete)
-        print(action)
-        print(game)
+        (action,game_state) = pickle.loads(data_complete)
         fun = getattr(self.player,action)
 
         # do the action and modify game state
-        fun(game)
+        fun(game_state) 
+        print(fun)
+        print(game_state)
 
         # send back modified game state
-        self.socket.sendall(pickle.dumps(game) + self.delim)
+        self.socket.sendall(pickle.dumps(game_state) + self.delim)
