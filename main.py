@@ -1,4 +1,5 @@
 from the_crew import *
+from network import *
 
 # with human player
 players = [
@@ -43,5 +44,16 @@ players = [
     Bot("Marie")
 ]
 
+Game = TheCrew(players,0)
+Game.play()
+
+# network
+
+players = [
+    Bot("Lucas"),
+    Bot("Pierrick"),
+    Bot("Fabiana"),
+    PlayerServer("Marie",5006)
+]
 Game = TheCrew(players,0)
 Game.play()
