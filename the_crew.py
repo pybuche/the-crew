@@ -65,8 +65,6 @@ class GameState:
         self.hand_tasks = state.hand_tasks
         self.discard = state.discard
         self.fold = state.fold
-
-        # tasks
         self.mission_number = state.mission_number
         self.mission_list = state.mission_list
         self.num_tasks = state.num_tasks
@@ -76,7 +74,6 @@ class GameState:
         self.resolved_tasks = state.resolved_tasks
         self.win = state.win
         self.current_player_idx = state.current_player_idx
-
         if self.mission_number == 4:
             # additional state variables
             self.player_state = state.player_state
