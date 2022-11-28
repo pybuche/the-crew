@@ -2,6 +2,8 @@ import socket
 import pickle
 import models
 
+#TODO change delim to (size 4 bytes, payload) 
+
 class PlayerServer(models.Player):
     def __init__(self,name,port,debug=False):
         self.host = "localhost"
