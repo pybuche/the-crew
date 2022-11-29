@@ -3,6 +3,19 @@ import pickle
 import struct
 import models
 
+def send_payload(sock,msg):
+    sock.sendall(struct.pack('>I',len(msg)))
+    sock.sendall(msg)
+
+def recv_payload(sock):
+    data_size = struct.unpack('>I', sock.recv(4))[0]
+    received_payload = b""
+    remaining_payload_size = data_size
+    while remaining_payload_size != 0:
+        received_payload += sock.recv(remaining_payload_size)
+        remaining_payload_size = data_size - len(received_payload)
+    return received_payload
+
 class PlayerServer(models.Player):
     def __init__(self,name,port,debug=False):
         self.host = "localhost"
@@ -23,16 +36,10 @@ class PlayerServer(models.Player):
     def send_to_client(self,action,game_state):
         # send action and game state
         data = pickle.dumps((action,game_state))
-        self.conn.sendall(struct.pack('>I',len(data)))
-        self.conn.sendall(data)
+        send_payload(self.conn,data)
 
         # receive modified game 
-        data_size = struct.unpack('>I', self.conn.recv(4))[0]
-        received_payload = b""
-        remaining_payload_size = data_size
-        while remaining_payload_size != 0:
-            received_payload += self.conn.recv(remaining_payload_size)
-            remaining_payload_size = data_size - len(received_payload)
+        received_payload = recv_payload(self.conn)
         game_state_modified = pickle.loads(received_payload)
         game_state.set_state(game_state_modified)
         
@@ -75,12 +82,7 @@ class PlayerClient:
 
     def do_action_on_server_request(self):
         # receive game state and action to perform
-        data_size = struct.unpack('>I', self.socket.recv(4))[0]
-        received_payload = b""
-        remaining_payload_size = data_size
-        while remaining_payload_size != 0:
-            received_payload += self.socket.recv(remaining_payload_size)
-            remaining_payload_size = data_size - len(received_payload)
+        received_payload = recv_payload(self.socket)
         (action,game_state) = pickle.loads(received_payload)
 
         fun = getattr(self.player,action)
@@ -88,5 +90,7 @@ class PlayerClient:
 
         # send back modified game state
         data = pickle.dumps(game_state)
-        self.socket.sendall(struct.pack('>I',len(data)))
-        self.socket.sendall(data)
+        send_payload(self.socket,data)
+
+       # if game_state.game_over():
+       #     self.still_connected = False
