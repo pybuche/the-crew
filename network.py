@@ -2,6 +2,10 @@ import socket
 import pickle
 import struct
 import models
+import ssl
+
+#TODO make it more secure using TLS/SSL 
+#TODO make the server validate changes made to gamestate (anti-cheat)
 
 def send_payload(sock,msg):
     sock.sendall(struct.pack('>I',len(msg)))
@@ -21,7 +25,6 @@ class PlayerServer(models.Player):
         self.host = "localhost"
         self.port = port
         self.debug = debug
-
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.socket.bind((self.host,self.port))
         self.socket.listen(1)
@@ -30,8 +33,11 @@ class PlayerServer(models.Player):
             print('Connected by {}'.format(self.addr))
         
         #TODO receive player name form network instead of param
-
         super().__init__(name)
+
+    def validate(self,action,game_state,game_state_modified):
+        #TODO implement gamestate change validation
+        return True
 
     def send_to_client(self,action,game_state):
         # send action and game state
@@ -41,7 +47,13 @@ class PlayerServer(models.Player):
         # receive modified game 
         received_payload = recv_payload(self.conn)
         game_state_modified = pickle.loads(received_payload)
-        game_state.set_state(game_state_modified)
+
+        # validate changes
+        if self.validate(action,game_state,game_state_modified):
+            game_state.set_state(game_state_modified)
+        else:
+            print("Cheating is bad, play again")
+            self.send_to_client(action,game_state)
         
     def play_setup_actions(self,game_state):
         self.send_to_client('play_setup_actions',game_state)
@@ -86,7 +98,7 @@ class PlayerClient:
         (action,game_state) = pickle.loads(received_payload)
 
         fun = getattr(self.player,action)
-        fun(game_state) 
+        fun(game_state)
 
         # send back modified game state
         data = pickle.dumps(game_state)
