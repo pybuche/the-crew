@@ -64,5 +64,5 @@ Game.play()
 # client
 from the_crew import *
 from network import *
-player = Human("Marie")
+player = Bot("Marie")
 PC = PlayerClient("localhost",5013,player)

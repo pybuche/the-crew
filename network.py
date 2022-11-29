@@ -104,5 +104,7 @@ class PlayerClient:
         data = pickle.dumps(game_state)
         send_payload(self.socket,data)
 
-       # if game_state.game_over():
-       #     self.still_connected = False
+        # TODO find condition to close the connection
+        if game_state.game_over(): # fails current player (or more) has empty hands
+            print(game_state)
+            self.still_connected = False
