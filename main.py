@@ -56,7 +56,7 @@ players = [
     Bot("Lucas"),
     Bot("Pierrick"),
     Bot("Fabiana"),
-    PlayerServer("Marie",5013)
+    PlayerServer("Marie",5015)
 ]
 Game = TheCrew(players,0)
 Game.play()
@@ -64,5 +64,5 @@ Game.play()
 # client
 from the_crew import *
 from network import *
-player = Bot("Marie")
-PC = PlayerClient("localhost",5013,player)
+player = Human("Marie")
+PC = PlayerClient("localhost",5015,player)
