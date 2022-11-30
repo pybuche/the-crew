@@ -46,6 +46,8 @@ class GameState:
         self.resolved_tasks = []
         self.win = False
         self.current_player_idx = 0
+        self.captain = 0
+        self.crewmates = []
 
         if self.mission_number == 4:
             # additional state variables
@@ -73,6 +75,8 @@ class GameState:
         self.drawn_tasks = state.drawn_tasks
         self.resolved_tasks = state.resolved_tasks
         self.win = state.win
+        self.captain = state.captain
+        self.crewmates = state.crewmates
         self.current_player_idx = state.current_player_idx
         if self.mission_number == 4:
             # additional state variables
@@ -110,10 +114,15 @@ class GameState:
                 task.modifier = self.modifiers[task_idx]
             self.drawn_tasks.append(task)
 
-    def promote_to_captain(self,player_idx):
-        print(str(self.player_names[player_idx]) + ' is the captain!')
+    def reorder_players(self,player_idx):
         idx = self.player_order.index(player_idx)
         self.player_order = self.player_order[idx:] + self.player_order[:idx]
+
+    def promote_to_captain(self,player_idx):
+        print(str(self.player_names[player_idx]) + ' is the captain!')
+        self.captain = player_idx
+        self.crewmates = [p for p in range(self.num_players) if p!= player_idx]
+        self.reorder_players(player_idx)
 
     def admissible_cards(self):
         player_idx = self.current_player_idx
@@ -222,7 +231,8 @@ class GameState:
 
     def player_str(self):
         # return information availale to the current player only
-        reprstr = self.mission_description + '\n'
+        reprstr = self.mission_description + '\n\n'
+        reprstr = reprstr + 'The captain is: ' + self.player_names[self.captain] + '\n'
         for player_idx in self.player_order:
             reprstr = reprstr + str(self.player_names[player_idx]) 
             if player_idx == self.current_player_idx:
@@ -235,7 +245,8 @@ class GameState:
 
     def __repr__(self):
         # return all information
-        reprstr = self.mission_description + '\n'
+        reprstr = self.mission_description + '\n\n'
+        reprstr = reprstr + 'The captain is: ' + self.player_names[self.captain] + '\n'
         for player_idx in self.player_order:
             reprstr = reprstr + str(self.player_names[player_idx]) \
                 + '\n\tHand: ' + ','.join([str(card) for card in self.hand_cards[player_idx]]) \
@@ -257,13 +268,12 @@ class TheCrew(models.Game):
         # play setup actions
         if self.state.mission_number == 4:    
             # the crewmates play first
-            for player_idx in self.state.player_order[1:]:
+            for player_idx in self.state.crewmates:
                 self.state.current_player_idx = player_idx
                 player = self.players[player_idx]
                 player.play_setup_actions(self.state)
             # then the captain
-            captain = self.state.player_order[0]
-            self.state.current_player_idx = captain
+            self.state.current_player_idx = self.captain
             player = self.players[captain]
             player.play_setup_actions(self.state)
         else:
@@ -312,9 +322,9 @@ class Round(models.Round):
 
         # check if a task was fullfilled
         self.game.state.task_complete()
-        # promote winner to captain
+        # reorder player order for nextr round
         leader = self.game.state.fold.leader()
-        self.game.state.promote_to_captain(leader)
+        self.game.state.reorder_players(leader)
         # discard fold
         self.game.state.discard.append(self.game.state.fold)
         # new empty fold
@@ -354,11 +364,10 @@ class Human(models.Human):
         
     def special_mission_4(self, game_state):
         player_idx = game_state.current_player_idx
-        if game_state.player_order.index(player_idx) == 0: # captain
-            crewmates = game_state.player_order[1:]
-            name_list = [game_state.player_names[i] for i in crewmates]
+        if player_idx == self.captain: 
+            name_list = [game_state.player_names[i] for i in self.crewmates]
             _,choice = self.menu_select(name_list)
-            game_state.is_sick = crewmates[choice]
+            game_state.is_sick = self.crewmates[choice]
             print("{} is sick".format(game_state.player_names[game_state.is_sick]))
         else: # crewmates
             _,game_state.player_state[player_idx] = self.menu_select(["good","bad"])
@@ -382,9 +391,8 @@ class Bot(models.RandomBot):
     
     def special_mission_4(self, game_state):
         player_idx = game_state.current_player_idx
-        if game_state.player_order.index(player_idx) == 0: # captain
-            crewmates = game_state.player_order[1:]
-            game_state.is_sick = random.choice(crewmates)
+        if player_idx == self.captain:
+            game_state.is_sick = random.choice(self.crewmates)
             print("{} is sick".format(game_state.player_names[game_state.is_sick]))
         else: # crewmates
             game_state.player_state[player_idx] = random.choice(["good","bad"])
