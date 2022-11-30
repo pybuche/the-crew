@@ -48,7 +48,7 @@ class Fold:
         self.player_names = player_names
 
     def __repr__(self):
-        reprstr = "Fold:\n" + ','.join([self.player_names[p] + ': ' + str(card) + '\n' for p,card in self.content]) + '\n'
+        reprstr = "\n\t" + '\n\t'.join([self.player_names[p] + ': ' + str(card) for p,card in self.content]) + '\n'
         return reprstr
 
     def isempty(self):
