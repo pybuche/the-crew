@@ -158,7 +158,7 @@ class RandomBot(Player):
 
 class Human(Player): # Humans are asked what to play
     def menu_select(self,options):
-        if len(options) == 1:
+        if len(options) == 1: #TODO change this to remove autoplay when only one action is available
             print(options)
             return 0,options[0]
         else:
