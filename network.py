@@ -36,7 +36,7 @@ class PlayerServer(models.Player):
         super().__init__(name)
 
     def validate(self,action,game_state,game_state_modified):
-        #TODO implement gamestate change validation
+        #TODO implement gamestate change validation to prevent cheating
         return True
 
     def send_to_client(self,action,game_state):
@@ -88,7 +88,6 @@ class PlayerClient:
 
         #TODO get initial state and display 
         #TODO send player name
-
         while self.still_connected: 
             self.do_action_on_server_request()
 
@@ -97,6 +96,8 @@ class PlayerClient:
         received_payload = recv_payload(self.socket)
         (action,game_state) = pickle.loads(received_payload)
 
+        print(game_state.player_str())
+
         fun = getattr(self.player,action)
         fun(game_state)
 
@@ -104,7 +105,6 @@ class PlayerClient:
         data = pickle.dumps(game_state)
         send_payload(self.socket,data)
 
-        # TODO find condition to close the connection
-        if game_state.game_over(): # fails current player (or more) has empty hands
-            print(game_state)
+        # disconnect if we are done playing
+        if game_state.last_round() and action == 'play_end_actions':
             self.still_connected = False

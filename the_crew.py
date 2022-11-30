@@ -192,6 +192,8 @@ class GameState:
         return False
 
     def game_over(self): 
+        # needs to be called at the end of the round, during last round
+        # would return game over after the captain played (empty hands)
         if self.failed_mission():
             return True
 
@@ -199,6 +201,7 @@ class GameState:
         tasks_done = True
         for player_idx in range(self.num_players):
             if not self.hand_cards[player_idx]:
+                # during 3 players game, one card is never played
                 empty_hands = True
             if self.hand_tasks[player_idx]:
                 tasks_done = False
@@ -210,21 +213,44 @@ class GameState:
         
         return empty_hands
 
+    def last_round(self):
+        # empty hands
+        if not self.hand_cards[self.current_player_idx]:
+            return True
+        else:
+            return False
+
+    def player_str(self):
+        # return information availale to the current player only
+        reprstr = self.mission_description + '\n'
+        for player_idx in self.player_order:
+            reprstr = reprstr + str(self.player_names[player_idx]) 
+            if player_idx == self.current_player_idx:
+                reprstr = reprstr + '\n\tHand: ' + ','.join([str(card) for card in self.hand_cards[player_idx]]) 
+            reprstr = reprstr + '\n\tTasks: ' + ','.join([str(card) for card in self.hand_tasks[player_idx]])  + '\n'        
+        if self.discard:
+            reprstr = reprstr + 'Last Fold:\n\t' + str(self.discard[-1])
+        reprstr = reprstr + 'Current Fold:\n\t' + str(self.fold)
+        return reprstr
+
     def __repr__(self):
-        reprstr = ''
+        # return all information
+        reprstr = self.mission_description + '\n'
         for player_idx in self.player_order:
             reprstr = reprstr + str(self.player_names[player_idx]) \
                 + '\n\tHand: ' + ','.join([str(card) for card in self.hand_cards[player_idx]]) \
                 + '\n\tTasks: ' + ','.join([str(card) for card in self.hand_tasks[player_idx]]) \
                 + '\n'  
         reprstr = reprstr + 'Tasks:\n\t'
-        reprstr = reprstr + ','.join([str(task) for task in self.drawn_tasks])
+        reprstr = reprstr + ','.join([str(task) for task in self.drawn_tasks]) + '\n'
+        reprstr = reprstr + str(self.fold)
         return reprstr
 
 class TheCrew(models.Game):
     def __init__(self, players, mission_number = 0):
         self.players = players
         self.state = GameState(players,mission_number)    
+        #TODO implement a history of game states ?
 
     def play(self):
         print('Let\'s play!')
@@ -257,6 +283,10 @@ class TheCrew(models.Game):
 
     def end_game(self):
         # do end of game actions 
+        for player_idx in self.state.player_order:
+            self.state.current_player_idx = player_idx
+            player = self.players[player_idx]
+            player.play_end_actions(self.state)
 
         # print 
         if self.state.win:
