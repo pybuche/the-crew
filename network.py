@@ -4,6 +4,10 @@ import struct
 import models
 import ssl
 
+# workaround, find a better solution, maybe curses ?
+import os
+clear = lambda: os.system('clear')
+
 #TODO make it more secure using TLS/SSL 
 #TODO make the server validate changes made to gamestate (anti-cheat)
 
@@ -96,6 +100,7 @@ class PlayerClient:
         received_payload = recv_payload(self.socket)
         (action,game_state) = pickle.loads(received_payload)
 
+        clear()
         print(game_state.player_str())
 
         fun = getattr(self.player,action)
