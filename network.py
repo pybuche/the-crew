@@ -45,6 +45,7 @@ class PlayerServer(models.Player):
 
     def send_to_client(self,action,game_state):
         # send action and game state
+        # TODO add action to the game state
         data = pickle.dumps((action,game_state))
         send_payload(self.conn,data)
 

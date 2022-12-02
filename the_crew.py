@@ -34,6 +34,9 @@ class GameState:
         self.hand_tasks = {p:[] for p in range(self.num_players)}
         self.discard = []
         self.fold = Fold(self.player_names)
+        self.win = False
+        self.captain = 0
+        self.crewmates = []
 
         # tasks
         self.mission_number = mission_number
@@ -44,10 +47,10 @@ class GameState:
         self.mission_description = self.mission_list[mission_number][2]
         self.drawn_tasks = []
         self.resolved_tasks = []
-        self.win = False
+
+        # TODO add game phase to the state (startup,start_round,interrupt,...)
         self.current_player_idx = 0
-        self.captain = 0
-        self.crewmates = []
+        self.current_game_phase = ''
 
         if self.mission_number == 4:
             # additional state variables
@@ -77,6 +80,7 @@ class GameState:
         self.win = state.win
         self.captain = state.captain
         self.crewmates = state.crewmates
+        self.current_game_phase = state.current_game_phase
         self.current_player_idx = state.current_player_idx
         if self.mission_number == 4:
             # additional state variables
