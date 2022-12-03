@@ -1,6 +1,5 @@
 import models 
 import random
-import network
 import json
 from cards import *
 
