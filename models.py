@@ -1,4 +1,5 @@
 import random
+#TODO use ABC and abstract methods 
 
 class GameMenu:
 # handle creation of player, web server, selecting game options
