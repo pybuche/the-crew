@@ -112,5 +112,6 @@ class PlayerClient:
         send_payload(self.socket,data)
 
         # disconnect if we are done playing
+        #TODO disconnect if mission complete before all cards are played
         if game_state.last_round() and action == 'play_end_actions':
             self.still_connected = False
