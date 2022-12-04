@@ -156,15 +156,18 @@ class GameState:
 
         # get cards that have the same color in the current player's hand
         same_color_cards = [c for c in self.hand_cards[player_idx] if c.color == card.color]
+        print(card)
+        print(same_color_cards)
+
         if len(same_color_cards) == 1:
              # if it's the only card
-            return 1 # TODO implement this
+            return 1 
         elif card == sorted(same_color_cards)[0]:
             # smallest card
-            return 0 # TODO implement this
+            return 0 
         elif card == sorted(same_color_cards)[-1]:
             # biggest card
-            return 2 # TODO implement this
+            return 2
         else:
             # it's neither of the previous ones
             return None
@@ -438,7 +441,7 @@ class Human(models.Human):
                 comm_options = []
                 for card in game_state.hand_cards[player_idx]:
                     valid_comm = game_state.admissible_communication(card)
-                    if valid_comm:
+                    if valid_comm != None:
                         comm_options.append((card, valid_comm))
                 if comm_options:
                     _,comm = self.menu_select(comm_options)
@@ -495,7 +498,7 @@ class Bot(models.RandomBot):
                 comm_options = []
                 for card in game_state.hand_cards[player_idx]:
                     valid_comm = game_state.admissible_communication(card)
-                    if valid_comm:
+                    if valid_comm != None:
                         comm_options.append((card, valid_comm))
                 if comm_options:
                     comm = random.choice(comm_options)
