@@ -69,6 +69,8 @@ class GameState:
         print(self)
 
     def set_state(self, state):
+        # TODO loop over fields of self, check if it exists in state
+        # and set self equal to other
         self.num_players = state.num_players
         self.player_order = state.player_order
         self.player_names = state.player_names
@@ -84,6 +86,7 @@ class GameState:
         self.drawn_tasks = state.drawn_tasks
         self.resolved_tasks = state.resolved_tasks
         self.win = state.win
+        self.radio_tokens = state.radio_tokens
         self.captain = state.captain
         self.crewmates = state.crewmates
         self.current_game_phase = state.current_game_phase
