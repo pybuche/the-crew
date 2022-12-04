@@ -16,13 +16,17 @@ class TaskCard:
     def __repr__(self):
         return 'TaskCard {} {} mod {}'.format(self.number, self.color, self.modifier)
 
-class Communication:
-    def __init__(self,card,token):
-        self.card = card
-        self.token = token
-    
+class CommCard(Card):
+    communication = ['smallest','only','biggest']
+    def __init__(self, color, number, trump_color=None, comm_idx=None):
+        super().__init__(color, number, trump_color)
+        self.comm_idx = comm_idx
+
     def __repr__(self):
-        return '{},{}'.format(str(self.card), self.token)
+        reprstr = super().__repr__()
+        if self.comm_idx:
+             reprstr += ', Comm Token: {}'.format(self.communication[self.comm_idx])
+        return reprstr
 
 class GameState:
     def __init__(self,players,mission_number):
@@ -36,6 +40,9 @@ class GameState:
         self.win = False
         self.captain = 0
         self.crewmates = []
+
+        # communication
+        self.radio_tokens = [True for p in players]
 
         # tasks
         self.mission_number = mission_number
@@ -91,8 +98,8 @@ class GameState:
         TRUMP_COLOR = 'black'
 
         # create and shuffle deck of cards
-        deck = [Card(color, number, TRUMP_COLOR) for color in CARD_COLORS for number in range(1, 10)] \
-            + [Card(TRUMP_COLOR, number, TRUMP_COLOR) for number in range(1, 5)]
+        deck = [CommCard(color, number, TRUMP_COLOR) for color in CARD_COLORS for number in range(1, 10)] \
+            + [CommCard(TRUMP_COLOR, number, TRUMP_COLOR) for number in range(1, 5)]
         random.shuffle(deck)
 
         # deal cards to players
@@ -100,7 +107,7 @@ class GameState:
             for player_idx in range(self.num_players): 
                 if deck:
                     card = deck.pop()
-                    if card.color == 'black' and card.number == 4:
+                    if card.istrump() and card.number == 4:
                         captain = player_idx
                     self.hand_cards[player_idx].append(card)
    
@@ -127,6 +134,37 @@ class GameState:
         self.crewmates = [p for p in range(self.num_players) if p!= player_idx]
         self.reorder_players(player_idx)
 
+    def admissible_communication(self,card):
+        # returns what you can communicate about a specific card
+        player_idx = self.current_player_idx
+
+        if not self.radio_tokens[player_idx]:
+            # can't communicate
+            return None
+
+        if card.istrump():
+            # can't communicate about trump cards
+            return None
+
+        if card not in self.hand_cards[player_idx]:
+            # this should not happen, let's check anyways
+            return None
+
+        # get cards that have the same color in the current player's hand
+        same_color_cards = [c for c in self.hand_cards[player_idx] if c.color == card.color]
+        if len(same_color_cards) == 1:
+             # if it's the only card
+            return 1 # TODO implement this
+        elif card == sorted(same_color_cards)[0]:
+            # smallest card
+            return 0 # TODO implement this
+        elif card == sorted(same_color_cards)[-1]:
+            # biggest card
+            return 2 # TODO implement this
+        else:
+            # it's neither of the previous ones
+            return None
+
     def admissible_cards(self):
         player_idx = self.current_player_idx
         if self.fold.isempty():
@@ -139,7 +177,7 @@ class GameState:
                 return required_color
             else:
                 # if not you need to cut
-                trumps = [cards for cards in self.hand_cards[player_idx] if cards.color == 'black']
+                trumps = [cards for cards in self.hand_cards[player_idx] if cards.istrump()]
                 if trumps:
                     return trumps
                 else:
@@ -163,6 +201,11 @@ class GameState:
     def play_card(self,player_idx,card):
         self.hand_cards[player_idx].remove(card)
         self.fold.add_card(player_idx,card)
+
+    def communicate(self,card,comm_idx):
+        player_idx = self.current_player_idx
+        card.comm_idx = comm_idx
+        self.radio_tokens[player_idx] = False
 
     def failed_mission(self):
         if self.mission_number == 4:
@@ -349,6 +392,11 @@ class Round(models.Round):
         self.end_round()
 
 class Human(models.Human):
+
+    def register_round_start_actions(self):
+        # define a list of functions that take the game as input
+        self.round_start_actions = [self.communicate]
+
     def register_setup_actions(self):
         # define a list of functions that take the game as input
         self.setup_actions = [self.do_setup]
@@ -376,6 +424,9 @@ class Human(models.Human):
             _,game_state.player_state[player_idx] = self.menu_select(["good","bad"])
             print(game_state.player_names[player_idx] + " is feeling " + game_state.player_state[player_idx])
 
+    def communicate(self,game_state):
+        pass
+
     def play_card(self,game_state):
         # select admissible cards
         player_idx = game_state.current_player_idx
@@ -385,8 +436,10 @@ class Human(models.Human):
 
 class Bot(models.RandomBot):
 
+    def register_round_start_actions(self):
+        self.round_start_actions = [self.communicate]
+
     def register_setup_actions(self):
-        # define a list of functions that take the game as input
         self.setup_actions = [self.do_setup]
 
     def register_round_regular_actions(self):
@@ -417,6 +470,22 @@ class Bot(models.RandomBot):
         card_to_play = random.choice(cards_list)
         game_state.play_card(player_idx,card_to_play)
 
+    def communicate(self,game_state):
+        player_idx = game_state.current_player_idx
+        if game_state.radio_tokens[player_idx]: 
+            # decide wether to communicate
+            if random.choice([True, False]):
+                comm_options = []
+                for card in game_state.hand_cards[player_idx]:
+                    valid_comm = game_state.admissible_communication(card)
+                    if valid_comm:
+                        comm_options.append((card, valid_comm))
+                if comm_options:
+                    comm = random.choice(comm_options)
+                    game_state.communicate(comm[0],comm[1])
+
+
+        
 class SmartBot(models.Player):
     #TODO
     pass
