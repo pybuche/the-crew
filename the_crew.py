@@ -138,6 +138,7 @@ class GameState:
         self.reorder_players(player_idx)
 
     def admissible_communication(self,card):
+        #TODO broken, fix it
         # returns what you can communicate about a specific card
         player_idx = self.current_player_idx
 
@@ -428,7 +429,20 @@ class Human(models.Human):
             print(game_state.player_names[player_idx] + " is feeling " + game_state.player_state[player_idx])
 
     def communicate(self,game_state):
-        pass
+        player_idx = game_state.current_player_idx
+        if game_state.radio_tokens[player_idx]: 
+            # decide wether to communicate
+            print('Do you want to communicate?')
+            _,choice = self.menu_select([True, False])
+            if choice:
+                comm_options = []
+                for card in game_state.hand_cards[player_idx]:
+                    valid_comm = game_state.admissible_communication(card)
+                    if valid_comm:
+                        comm_options.append((card, valid_comm))
+                if comm_options:
+                    _,comm = self.menu_select(comm_options)
+                    game_state.communicate(comm[0],comm[1])
 
     def play_card(self,game_state):
         # select admissible cards
