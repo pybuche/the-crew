@@ -285,29 +285,35 @@ class GameState:
     def player_str(self):
         # return information availale to the current player only
         reprstr = self.mission_description + '\n\n'
-        reprstr = reprstr + 'The captain is: ' + self.player_names[self.captain] + '\n'
+        reprstr += 'The captain is: ' + self.player_names[self.captain] + '\n'
         for player_idx in self.player_order:
-            reprstr = reprstr + str(self.player_names[player_idx]) 
+            reprstr += str(self.player_names[player_idx]) 
             if player_idx == self.current_player_idx:
-                reprstr = reprstr + '\n\tHand: ' + ','.join([str(card) for card in self.hand_cards[player_idx]]) 
-            reprstr = reprstr + '\n\tTasks: ' + ','.join([str(card) for card in self.hand_tasks[player_idx]])  + '\n'        
+                reprstr += '\n\tHand: ' + ','.join([str(card) for card in self.hand_cards[player_idx]]) 
+            else:
+                reprstr += str(self.player_names[player_idx])
+                reprstr += '\n\tHand: '
+                for card in self.hand_cards[player_idx]:
+                    if card.comm_idx != None:
+                        reprstr += str(card)
+            reprstr += '\n\tTasks: ' + ','.join([str(card) for card in self.hand_tasks[player_idx]])  + '\n'        
         if self.discard:
-            reprstr = reprstr + 'Last Fold:\n\t' + str(self.discard[-1])
-        reprstr = reprstr + 'Current Fold:\n\t' + str(self.fold)
+            reprstr += 'Last Fold:\n\t' + str(self.discard[-1])
+        reprstr += 'Current Fold:\n\t' + str(self.fold)
         return reprstr
 
     def __repr__(self):
         # return all information
         reprstr = self.mission_description + '\n\n'
-        reprstr = reprstr + 'The captain is: ' + self.player_names[self.captain] + '\n'
+        reprstr += 'The captain is: ' + self.player_names[self.captain] + '\n'
         for player_idx in self.player_order:
-            reprstr = reprstr + str(self.player_names[player_idx]) \
+            reprstr += str(self.player_names[player_idx]) \
                 + '\n\tHand: ' + ','.join([str(card) for card in self.hand_cards[player_idx]]) \
                 + '\n\tTasks: ' + ','.join([str(card) for card in self.hand_tasks[player_idx]]) \
                 + '\n'  
-        reprstr = reprstr + 'Tasks:\n\t'
-        reprstr = reprstr + ','.join([str(task) for task in self.drawn_tasks]) + '\n'
-        reprstr = reprstr + str(self.fold)
+        reprstr += 'Tasks:\n\t'
+        reprstr += ','.join([str(task) for task in self.drawn_tasks]) + '\n'
+        reprstr += str(self.fold)
         return reprstr
 
 class TheCrew(models.Game):
