@@ -41,8 +41,8 @@ players = [
     Bot("Lucas"),
     Bot("Pierrick"),
     Bot("Fabiana"),
-    Bot("Marie")
-    Bot("Lea")
+    Bot("Marie"),
+    Human("Lea")
 ]
 
 Game = TheCrew(players,0)
