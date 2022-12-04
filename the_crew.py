@@ -14,7 +14,7 @@ class TaskCard:
         self.modifier = None
 
     def __repr__(self):
-        return 'TaskCard {} {} mod {}'.format(self.number, self.color, self.modifier)
+        return 'TaskCard {} {}, {}'.format(self.color, self.number, self.modifier)
 
 class CommCard(Card):
     communication = ['smallest','only','biggest']
@@ -156,9 +156,6 @@ class GameState:
 
         # get cards that have the same color in the current player's hand
         same_color_cards = [c for c in self.hand_cards[player_idx] if c.color == card.color]
-        print(card)
-        print(same_color_cards)
-
         if len(same_color_cards) == 1:
              # if it's the only card
             return 1 
@@ -197,7 +194,7 @@ class GameState:
             if player_idx == self.fold.leader():
                 for task in self.hand_tasks[player_idx]:
                     if task.color == card.color and task.number == card.number:
-                        print(str(player_idx) + ' completed task ' + str(task))
+                        print(self.player_names[player_idx] + ' completed task ' + str(task))
                         self.hand_tasks[player_idx].remove(task)
                         self.resolved_tasks.append(task)
                         # TODO: the rule states that if two tasks are done in 
@@ -284,6 +281,7 @@ class GameState:
 
     def player_str(self):
         # return information availale to the current player only
+        #TODO fix
         reprstr = self.mission_description + '\n\n'
         reprstr += 'The captain is: ' + self.player_names[self.captain] + '\n'
         for player_idx in self.player_order:
@@ -291,7 +289,6 @@ class GameState:
             if player_idx == self.current_player_idx:
                 reprstr += '\n\tHand: ' + ','.join([str(card) for card in self.hand_cards[player_idx]]) 
             else:
-                reprstr += str(self.player_names[player_idx])
                 reprstr += '\n\tHand: '
                 for card in self.hand_cards[player_idx]:
                     if card.comm_idx != None:
@@ -509,8 +506,6 @@ class Bot(models.RandomBot):
                 if comm_options:
                     comm = random.choice(comm_options)
                     game_state.communicate(comm[0],comm[1])
-
-
         
 class SmartBot(models.Player):
     #TODO
