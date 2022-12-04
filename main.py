@@ -36,12 +36,13 @@ players = [
 Game = TheCrew(players)
 Game.play()
 
-# 4 bots
+# 5 bots
 players = [
     Bot("Lucas"),
     Bot("Pierrick"),
     Bot("Fabiana"),
     Bot("Marie")
+    Bot("Lea")
 ]
 
 Game = TheCrew(players,0)
