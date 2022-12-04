@@ -26,6 +26,9 @@ class Card:
         self.number = number
         self.trump_color = trump_color
 
+    def istrump(self):
+        return self.color == self.trump_color
+
     def __repr__(self):
         return '{} {}'.format(self.color, self.number)
 
