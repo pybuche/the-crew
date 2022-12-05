@@ -7,6 +7,10 @@ from cards import *
 # modifiers (no communicatiopn, ...)
 # There are also modifiers that affect only one player
 
+# TODO: in the crew, each mission is basically a different game 
+# that uses the same basic rules
+# Use inheritance to reflect that ?
+
 class TaskCard:
     def __init__(self, color, number):
         self.color = color
@@ -138,7 +142,6 @@ class GameState:
         self.reorder_players(player_idx)
 
     def admissible_communication(self,card):
-        #TODO broken, fix it
         # returns what you can communicate about a specific card
         player_idx = self.current_player_idx
 
