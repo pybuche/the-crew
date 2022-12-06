@@ -8,8 +8,10 @@ from cards import *
 # There are also modifiers that affect only one player
 
 # TODO: in the crew, each mission is basically a different game 
-# that uses the same basic rules
-# Use inheritance to reflect that ?
+# that uses the same basic rules. Code BaseTheCrew class 
+# that takes as input the number of tasks and associated 
+# modifiers (could be 0).
+# Use inheritance to derive classes for special missions
 
 class TaskCard:
     def __init__(self, color, number):
