@@ -3,6 +3,11 @@ import random
 import json
 from cards import *
 
+# TODO: for reinforcement learning, you need to get rid of 
+# the game while loop. Instead you need to step through 
+# the game one step at a time by providing an action to
+# the game 
+
 # TODO: on top of task card modifiers, there are mission
 # modifiers (no communicatiopn, ...)
 # There are also modifiers that affect only one player
@@ -30,7 +35,7 @@ class CommCard(Card):
 
     def __repr__(self):
         reprstr = super().__repr__()
-        if self.comm_idx:
+        if self.comm_idx != None:
              reprstr += ', Comm Token: {}'.format(self.communication[self.comm_idx])
         return reprstr
 
@@ -48,7 +53,7 @@ class GameState:
         self.crewmates = []
 
         # communication
-        self.radio_tokens = [True for p in players]
+        self.radio_tokens = [True for p in range(self.num_players)]
 
         # tasks
         self.mission_number = mission_number
@@ -62,7 +67,12 @@ class GameState:
 
         # TODO add game phase to the state (startup,start_round,interrupt,...)
         self.current_player_idx = 0
-        self.current_game_phase = ''
+        self.game_phases = {
+            0: 'draw_cards',
+            1: 'communicate',
+            2: 'play_cards'
+            }
+        self.current_game_phase = 0
 
         if self.mission_number == 4:
             # additional state variables
@@ -70,8 +80,6 @@ class GameState:
             self.is_sick = None
 
         self.setup_game()
-
-        print(self.mission_description)
         print(self)
 
     def set_state(self, state):
@@ -103,6 +111,23 @@ class GameState:
             self.is_sick = state.is_sick
 
     def setup_game(self):
+        # make sure properties are set to the right values
+        self.hand_cards = {p:[] for p in range(self.num_players)}
+        self.hand_tasks = {p:[] for p in range(self.num_players)}
+        self.discard = []
+        self.fold = Fold(self.player_names)
+        self.win = False
+        self.captain = 0
+        self.crewmates = []
+        self.radio_tokens = [True for p in range(self.num_players)]
+        self.drawn_tasks = []
+        self.resolved_tasks = []
+        self.current_player_idx = 0
+        self.current_game_phase = 0
+        if self.mission_number == 4:
+            self.player_state = {}
+            self.is_sick = None
+
         CARD_COLORS = ['green', 'yellow', 'blue', 'pink']
         TRUMP_COLOR = 'black'
 
@@ -194,7 +219,7 @@ class GameState:
                     return [cards for cards in self.hand_cards[player_idx]]
 
     def task_complete(self):
-        # check if a task or more was done in the fold
+        # check if a task or more was done in the last fold
         for player_idx,card in self.fold.content:
             if player_idx == self.fold.leader():
                 for task in self.hand_tasks[player_idx]:
@@ -202,10 +227,12 @@ class GameState:
                         print(self.player_names[player_idx] + ' completed task ' + str(task))
                         self.hand_tasks[player_idx].remove(task)
                         self.resolved_tasks.append(task)
+                        return True
                         # TODO: the rule states that if two tasks are done in 
                         # the same fold and they have modifiers (like 1 and 2)
                         # they are considered solved in the right order no 
                         # matter the order of those cards in the fold
+        return False
 
     def play_card(self,player_idx,card):
         self.hand_cards[player_idx].remove(card)
@@ -255,6 +282,12 @@ class GameState:
                     return True
         return False
 
+    def next_player(self):
+        curr_player_idx = self.current_player_idx
+        curr_player_order = self.player_order.index(curr_player_idx)
+        next_player = self.player_order[(curr_player_order + 1)%self.num_players]
+        return next_player
+
     def game_over(self): 
         # needs to be called at the end of the round, during last round
         # would return game over after the captain played (empty hands)
@@ -283,6 +316,11 @@ class GameState:
             return True
         else:
             return False
+
+    def RL_observation(self):
+        #TODO return observation vector for RL 
+        observation = []
+        return observation
 
     def player_str(self):
         # return information availale to the current player only
@@ -322,7 +360,72 @@ class TheCrew(models.Game):
     def __init__(self, players, mission_number = 0):
         self.players = players
         self.state = GameState(players,mission_number)    
-        #TODO implement a history of game states ?
+
+    def reset(self,player_idx):
+        self.state.setup_game()
+
+        # advance initial game state until it's {player_idx} turn to play
+        for p in self.state.player_order:
+            if p == player_idx:
+                break
+            else:
+                self.state.current_player_idx = p
+                player = self.players[p]
+                if self.state.current_game_phase == 0:
+                    player.play_setup_actions(self.state)
+                elif self.state.current_game_phase == 1:
+                    player.play_round_start_actions(self.state)
+                elif self.state.current_game_phase == 2:
+                    player.play_round_regular_actions(self.state)
+                
+
+    def step(self, player_idx, action):
+        # implement step function for RL instead of while loop
+        # NOTE this is effectively short-circuiting the Round class
+        
+        self.state.current_player_idx = player_idx
+        player = self.players[player_idx]
+        player.step(self.state, action)
+
+        # advance game state until it's {player_idx} turn to play
+        for _ in range(self.state.num_players-1):   
+            p = self.state.next_player()
+            current_player_order = self.state.player_order.index(p)
+            self.state.current_player_idx = p
+            player = self.players[p]
+
+            # play
+            if self.state.current_game_phase == 0:
+                player.play_setup_actions(self.state)
+            elif self.state.current_game_phase == 1:
+                player.play_round_start_actions(self.state)
+            elif self.state.current_game_phase == 2:
+                player.play_round_regular_actions(self.state)
+
+             # end of round
+            if current_player_order == self.state.num_players-1:
+                # update game phase
+                if self.state.current_game_phase < 2:
+                    self.state.current_game_phase += 1
+                else:
+                    self.state.current_game_phase  = 1
+
+                # check if a task was fullfilled
+                task_done = self.state.task_complete()
+                # reorder player order for nextr round
+                leader = self.state.fold.leader()
+                self.state.reorder_players(leader)
+                # discard fold
+                self.state.discard.append(self.state.fold)
+                # new empty fold
+                self.state.fold = Fold(self.state.player_names)
+
+        # get observation and reward when everyone has played ?
+        reward = 0
+        obs = self.state.RL_observation()
+        done = self.state.game_over()
+        win = self.state.win
+        return (obs,reward,done,win)
 
     def play(self):
         print('Let\'s play!')
