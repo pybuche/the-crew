@@ -48,6 +48,20 @@ players = [
 Game = TheCrew(players,0)
 Game.play()
 
+# 1 Agent
+# 4 bots
+from the_crew import *
+from environment import *
+players = [
+    Agent("Lucas"),
+    Bot("Pierrick"),
+    Bot("Fabiana"),
+    Bot("Marie"),
+    Bot("Lea")
+]
+
+Game = TheCrew(players,0)
+
 # network
 
 # server
