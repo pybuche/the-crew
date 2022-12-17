@@ -380,6 +380,10 @@ class TheCrew(models.Game):
                 
 
     def step(self, player_idx, action):
+        #TODO code to handle action number should go in here
+        # not in an Agent class.
+        # Rewrite player class to send actions
+
         # implement step function for RL instead of while loop
         # NOTE this is effectively short-circuiting the Round class
         
